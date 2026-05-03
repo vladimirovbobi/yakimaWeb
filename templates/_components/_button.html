@@ -1,0 +1,21 @@
+{# Polished button. Variants: gold | outline | ghost. Sizes: sm | md | lg. #}
+{# Usage: {% include "_components/_button.html" with label="Join" href="/signup" variant="gold" size="md" %} #}
+{% with variant=variant|default:"gold" size=size|default:"md" type=type|default:"button" %}
+  {% if href %}
+    <a href="{{ href }}"
+       class="btn-{{ variant }} btn-{{ size }} {{ extra_class|default:'' }}"
+       {% if target %}target="{{ target }}" rel="noopener"{% endif %}>
+      {% if icon %}{{ icon|safe }}{% endif %}
+      <span>{{ label }}</span>
+    </a>
+  {% else %}
+    <button type="{{ type }}"
+            class="btn-{{ variant }} btn-{{ size }} {{ extra_class|default:'' }}"
+            {% if hx_post %}hx-post="{{ hx_post }}"{% endif %}
+            {% if hx_target %}hx-target="{{ hx_target }}"{% endif %}
+            {% if disabled %}disabled{% endif %}>
+      {% if icon %}{{ icon|safe }}{% endif %}
+      <span>{{ label }}</span>
+    </button>
+  {% endif %}
+{% endwith %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Yakima Real Estate Hub — Central Washington's home for realtors, services, and market truth{% endblock %}
+{% block description %}Verified Washington realtors, trusted local service providers, and a real community for buying and selling in Yakima and Central Washington.{% endblock %}
+
+{% block content %}
+
+{# ─── Hero ─── #}
+{% include "_components/_hero.html" with image="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=2000&q=80&fm=jpg" overline="Central Washington · Yakima · Tri-Cities" headline="The honest version of local real estate." subhead="Verified Washington realtors. Trusted local services. A community where good answers beat loud ones." cta_label="Join the Hub" cta_href="/accounts/signup/" cta_secondary_label="See verified realtors" cta_secondary_href="#realtors" %}
+
+{# ─── Value props ─── #}
+<section class="section-y bg-deep">
+  <div class="container-page">
+    <div x-data x-reveal class="max-w-3xl">
+      <p class="label-luxe text-gold-hi">What you get</p>
+      <h2 class="h-page mt-3">Built for the work, not the noise.</h2>
+      <p class="mt-4 text-mist text-lg leading-relaxed">
+        Most real estate forums online are either MLS-walled gardens or anonymous noise.
+        We built something in between — verified professionals, trusted reviews, and AI tools
+        that actually save time on the parts of the job nobody loves.
+      </p>
+    </div>
+
+    <div x-data x-reveal-stagger class="mt-12 grid gap-6 md:grid-cols-3">
+
+      <div class="surface p-7">
+        <div class="text-gold mb-4">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 12l2 2 4-4"/>
+            <path d="M21 12c0 1-1 11-9 11s-9-10-9-11a9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h3 class="h-card mb-2">Verified realtors only</h3>
+        <p class="text-mist text-sm leading-relaxed">
+          Every realtor account is checked against the Washington DOL via ARELLO — at signup
+          and every 30 days. The badge means something.
+        </p>
+      </div>
+
+      <div class="surface p-7">
+        <div class="text-gold mb-4">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M9 9h6v6H9z"/>
+            <path d="M3 9h6M15 9h6M9 3v6M9 15v6"/>
+          </svg>
+        </div>
+        <h3 class="h-card mb-2">A real local marketplace</h3>
+        <p class="text-mist text-sm leading-relaxed">
+          Photographers, lenders, junk removal, 3D tours, automation, AI agents — all the
+          services that move a deal forward, all in Central Washington.
+        </p>
+      </div>
+
+      <div class="surface p-7">
+        <div class="text-gold mb-4">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h3 class="h-card mb-2">AI tools that pull weight</h3>
+        <p class="text-mist text-sm leading-relaxed">
+          Furniture remover for stale photos. Description writer for tired listings.
+          Built for the parts of the job that drain time but don't pay.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{# ─── How it works ─── #}
+<section class="section-y">
+  <div class="container-page">
+    <div x-data x-reveal class="max-w-3xl">
+      <p class="label-luxe text-gold-hi">How it works</p>
+      <h2 class="h-page mt-3">Four steps. No theatrics.</h2>
+    </div>
+
+    <ol x-data x-reveal-stagger class="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4 list-none">
+      <li class="space-y-3">
+        <div class="font-serif text-5xl text-gold-dim leading-none">01</div>
+        <h3 class="h-card">Create an account</h3>
+        <p class="text-mist text-sm">Email + password. Two minutes. Members can comment, ask, run AI tools.</p>
+      </li>
+      <li class="space-y-3">
+        <div class="font-serif text-5xl text-gold-dim leading-none">02</div>
+        <h3 class="h-card">Realtors verify</h3>
+        <p class="text-mist text-sm">Submit your WA license. ARELLO checks it. You get the badge.</p>
+      </li>
+      <li class="space-y-3">
+        <div class="font-serif text-5xl text-gold-dim leading-none">03</div>
+        <h3 class="h-card">Vendors list services</h3>
+        <p class="text-mist text-sm">Build your profile, list packages, respond to leads. (Phase 5.)</p>
+      </li>
+      <li class="space-y-3">
+        <div class="font-serif text-5xl text-gold-dim leading-none">04</div>
+        <h3 class="h-card">Community keeps it real</h3>
+        <p class="text-mist text-sm">Reviews, comments, forum — moderated by humans + AI, not chaos.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+{# ─── CTA strip ─── #}
+<section class="bg-gradient-to-br from-warm via-deep to-black border-y border-gold/20">
+  <div class="container-page section-y-tight">
+    <div x-data x-reveal class="max-w-4xl mx-auto text-center space-y-6">
+      <p class="label-luxe text-gold-hi">For Yakima realtors</p>
+      <h2 class="h-page">Get the verified badge.</h2>
+      <p class="text-mist text-lg max-w-2xl mx-auto">
+        It takes about three minutes. Once you're verified, your name + brokerage carry the
+        badge across every comment, post, and reply.
+      </p>
+      <div class="flex justify-center gap-3 pt-2">
+        <a href="/accounts/signup/" class="btn-gold btn-lg">Get verified</a>
+        <a href="{% url 'core:about' %}" class="btn-outline btn-lg">How verification works</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ─── Closing note ─── #}
+<section class="section-y">
+  <div class="container-page max-w-3xl text-center" x-data x-reveal>
+    <p class="font-serif italic text-2xl text-mist leading-relaxed">
+      "Built in Yakima, for the people who know it best.<br>
+      Independent. Not affiliated with any MLS or brokerage."
+    </p>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}About — {{ SITE_NAME }}{% endblock %}
+{% block description %}Why Yakima Real Estate Hub exists, who it's for, and how we run it.{% endblock %}
+
+{% block content %}
+
+<section class="section-y">
+  <div class="container-page max-w-3xl">
+
+    <div x-data x-reveal>
+      <p class="label-luxe text-gold-hi">About</p>
+      <h1 class="h-display mt-4">A platform that respects your time.</h1>
+    </div>
+
+    <div x-data x-reveal:200 class="prose-yw mt-10">
+      <p class="text-xl">
+        Yakima Real Estate Hub exists because Central Washington realtors and homebuyers
+        deserve a place that takes them seriously — and we noticed nobody was building it.
+      </p>
+
+      <p>
+        Most online real estate communities fall into one of two camps: walled-garden MLS
+        portals you can't search without a login, or wide-open forums where anonymous posts
+        compete with bots and out-of-state spam. Neither serves the actual work.
+      </p>
+
+      <p>
+        So we built the middle path. Verified realtors. Trusted local services.
+        AI tools for the parts of the job that drain your day. A community where good
+        answers beat loud ones — because real names + verified credentials + active
+        moderation make that possible.
+      </p>
+
+      <h2>What we believe</h2>
+
+      <p><strong>Verification is a feature, not friction.</strong>
+        Every realtor account is checked against the Washington Department of Licensing
+        through ARELLO, at signup and every 30 days after. Suspended licenses lose the
+        badge automatically. The trust signal stays honest.
+      </p>
+
+      <p><strong>Local matters more than scale.</strong>
+        We chose Yakima, Kittitas, Benton, and Franklin counties on purpose. The bigger
+        platforms don't know whether Selah or Tieton is the better commute for a Yakima
+        nurse. We do.
+      </p>
+
+      <p><strong>AI tools should pull weight, not generate slop.</strong>
+        Our furniture remover and description writer are tuned for real listings, not
+        viral content. Use them on properties you represent. Per-user rate limits keep
+        the costs sane and the output thoughtful.
+      </p>
+
+      <p><strong>Moderation is a craft, not a kill switch.</strong>
+        Every post runs through a three-layer pipeline — deterministic checks, an AI
+        classifier with prompt-injection defenses, and human review when it matters.
+        Most posts publish in under a second. Borderline cases get a real person.
+      </p>
+
+      <h2>How we run</h2>
+
+      <p>
+        Independent. Not affiliated with any MLS, brokerage, or franchise. Built and
+        operated from Yakima. Funded by featured listings and (eventually) vendor
+        subscriptions in the marketplace — not by selling your data, never by selling
+        your data, and not by serving you ads.
+      </p>
+
+      <p>
+        We log every moderation decision, every staff action, every license check.
+        If we ever pull your post or downgrade your badge, you can ask why and we can
+        show you exactly what happened.
+      </p>
+
+      <h2>Who we're for</h2>
+
+      <ul>
+        <li><strong>Central Washington realtors</strong> — verified blog posts, marketplace presence, community questions, AI tools.</li>
+        <li><strong>Service providers</strong> — photographers, lenders, junk removal, 3D tours, AI agents, automation, anything realtors hire. Lead-gen profiles in the marketplace.</li>
+        <li><strong>Buyers + sellers</strong> — questions answered by people who actually know the local market. Reviews you can trust because they're tied to verified leads.</li>
+      </ul>
+
+      <h2>Get involved</h2>
+
+      <p>
+        <a href="/accounts/signup/">Create an account</a> to comment, ask questions, run AI
+        tools, or follow realtors and vendors. If you're a Washington-licensed broker,
+        <a href="/realtor/verify/">submit your license</a> to claim the verified badge.
+        For service providers, the marketplace opens in our next phase — drop us a line
+        at <a href="mailto:hello@yakimaweb.com">hello@yakimaweb.com</a> to be among the first.
+      </p>
+
+      <p class="font-serif italic text-mist">
+        — The Yakima Real Estate Hub team
+      </p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

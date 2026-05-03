@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load allauth %}
+{% block title %}Sign in — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-md">
+    <div x-data x-reveal class="text-center">
+      <p class="label-luxe text-gold-hi">Welcome back</p>
+      <h1 class="h-page mt-3">Sign in.</h1>
+    </div>
+
+    <form method="post" action="{% url 'account_login' %}" class="surface mt-8 p-8 space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="form-error" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div>
+        <label for="id_login" class="block text-sm font-medium text-ivory">Email</label>
+        <input id="id_login" name="login" type="email" required autocomplete="email"
+               value="{{ form.login.value|default:'' }}" class="input">
+        {% if form.login.errors %}<p class="form-error">{{ form.login.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label for="id_password" class="block text-sm font-medium text-ivory">Password</label>
+        <input id="id_password" name="password" type="password" required autocomplete="current-password" class="input">
+        {% if form.password.errors %}<p class="form-error">{{ form.password.errors.0 }}</p>{% endif %}
+      </div>
+
+      <label class="flex items-center gap-2 text-sm text-mist">
+        <input type="checkbox" name="remember" class="form-checkbox text-gold focus:ring-gold rounded">
+        <span>Remember me</span>
+      </label>
+
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+
+      <button type="submit" class="btn-gold btn-md w-full">Sign in</button>
+    </form>
+
+    <div class="mt-6 text-center text-sm space-y-2">
+      <p>
+        <a href="{% url 'account_reset_password' %}" class="text-gold-hi hover:text-gold underline">
+          Forgot password?
+        </a>
+      </p>
+      <p class="text-mist">
+        New to {{ SITE_NAME }}?
+        <a href="{% url 'account_signup' %}" class="text-gold-hi hover:text-gold underline">Create an account</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

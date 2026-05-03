@@ -1,0 +1,27 @@
+{# Badge component. Variants: gold | verified | pending | removed | role. #}
+{# Usage: {% include "_components/_badge.html" with variant="verified" label="Verified WA Realtor" %} #}
+{% with variant=variant|default:"gold" %}
+<span class="badge-{{ variant }}{% if size %} text-{{ size }}{% endif %}"
+      {% if title %}title="{{ title }}"{% endif %}>
+  {% if variant == "verified" %}
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor"
+            stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  {% endif %}
+  {% if variant == "pending" %}
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12,6 12,12 16,14"/>
+    </svg>
+  {% endif %}
+  {% if variant == "removed" %}
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+  {% endif %}
+  <span>{{ label }}</span>
+</span>
+{% endwith %}

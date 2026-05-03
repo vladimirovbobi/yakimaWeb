@@ -1,0 +1,72 @@
+{# HTMX-polled partial. Stops polling when verification finishes. #}
+<div id="status-card"
+     {% if profile.verification_status == 'pending' %}
+       hx-get="{% url 'accounts:realtor_status' %}"
+       hx-trigger="every 3s"
+       hx-swap="outerHTML"
+     {% endif %}
+     class="surface mt-8 p-8">
+
+  {% if profile.verification_status == 'pending' %}
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 rounded-full border-2 border-gold/30 border-t-gold animate-spin"></div>
+      <div>
+        <p class="h-card mb-1">Verifying with ARELLO…</p>
+        <p class="text-mist text-sm">This usually takes 2–10 seconds.</p>
+      </div>
+    </div>
+
+  {% elif profile.verification_status == 'verified' %}
+    <div class="space-y-4">
+      <div class="flex items-center gap-3">
+        <span class="badge-verified text-sm">Verified</span>
+        <p class="label-luxe">{{ profile.get_license_type_display }}</p>
+      </div>
+      <p class="h-card">You're verified. Welcome to the Hub.</p>
+      <p class="text-mist">
+        Your verified badge appears on every comment, post, and reply.
+        License re-verified every {{ ARELLO_VERIFICATION_INTERVAL_DAYS|default:30 }} days.
+      </p>
+      <div class="flex gap-3 pt-2">
+        <a href="{% url 'accounts:realtor_bio_edit' %}" class="btn-gold btn-md">Polish your profile →</a>
+        <a href="{% url 'core:profile' %}" class="btn-outline btn-md">Back to profile</a>
+      </div>
+    </div>
+
+  {% elif profile.verification_status == 'not_found' %}
+    <div class="space-y-4">
+      <span class="badge-removed">Not found</span>
+      <p class="h-card">We couldn't find that license number.</p>
+      <p class="text-mist">
+        Double-check the number on your DOL paperwork. If it's correct and you still see this,
+        email <a class="underline text-gold-hi" href="mailto:support@yakimaweb.com">support@yakimaweb.com</a>.
+      </p>
+      <a href="{% url 'accounts:realtor_verify' %}" class="btn-outline btn-md">Try again</a>
+    </div>
+
+  {% elif profile.verification_status in 'expired suspended revoked'|join:' '|wordlist %}
+    <div class="space-y-4">
+      <span class="badge-removed">{{ profile.get_verification_status_display }}</span>
+      <p class="h-card">Your license is currently {{ profile.get_verification_status_display|lower }}.</p>
+      <p class="text-mist">
+        We can't grant the verified badge while your license is in this state. Once it's reinstated
+        with the WA DOL, return here and we'll re-verify automatically.
+      </p>
+    </div>
+
+  {% else %}
+    <div class="space-y-4">
+      <span class="badge-pending">{{ profile.get_verification_status_display }}</span>
+      <p class="h-card">Verification hit a snag.</p>
+      <p class="text-mist">
+        ARELLO returned an unexpected response. We'll retry shortly.
+        If this persists, contact <a class="underline text-gold-hi" href="mailto:support@yakimaweb.com">support</a>.
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="mt-6 pt-4 border-t border-gold/10 flex items-center justify-between text-xs text-dim">
+    <span>License: {{ profile.license_number }}</span>
+    {% if profile.verified_at %}<span>Verified {{ profile.verified_at|date:"M j, Y" }}</span>{% endif %}
+  </div>
+</div>

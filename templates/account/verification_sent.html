@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Check your email — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-md text-center">
+    <div x-data x-reveal>
+      <p class="label-luxe text-gold-hi">Almost in</p>
+      <h1 class="h-page mt-3">Check your inbox.</h1>
+      <p class="text-mist mt-4 text-lg">
+        We sent a verification link to your email. Click it to activate your account.
+      </p>
+      <p class="text-dim text-sm mt-6">
+        Don't see it? Check spam, or
+        <a href="{% url 'account_email' %}" class="underline text-gold-hi">resend</a>.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

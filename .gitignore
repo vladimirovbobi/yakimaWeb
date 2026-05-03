@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual envs
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# uv
+uv.lock
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
+# Static build output
+static/dist/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Playwright
+playwright-report/
+test-results/
+.playwright/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Sentry
+.sentry-build-marker
+
+# Docker
+.docker/
+
+# Secrets
+*.pem
+*.key
+secrets/

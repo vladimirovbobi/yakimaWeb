@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Join — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-md">
+    <div x-data x-reveal class="text-center">
+      <p class="label-luxe text-gold-hi">Create account</p>
+      <h1 class="h-page mt-3">Join the Hub.</h1>
+      <p class="text-mist mt-3">
+        Members can comment, ask questions, and run our AI tools. Realtors verify their license to publish.
+      </p>
+    </div>
+
+    <form method="post" action="{% url 'account_signup' %}" class="surface mt-8 p-8 space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="form-error" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div>
+        <label for="id_email" class="block text-sm font-medium text-ivory">Email</label>
+        <input id="id_email" name="email" type="email" required autocomplete="email"
+               value="{{ form.email.value|default:'' }}" class="input">
+        {% if form.email.errors %}<p class="form-error">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label for="id_password1" class="block text-sm font-medium text-ivory">Password</label>
+        <input id="id_password1" name="password1" type="password" required autocomplete="new-password" class="input">
+        <p class="form-help">12+ characters. Mix it up.</p>
+        {% if form.password1.errors %}<p class="form-error">{{ form.password1.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label for="id_password2" class="block text-sm font-medium text-ivory">Confirm password</label>
+        <input id="id_password2" name="password2" type="password" required autocomplete="new-password" class="input">
+        {% if form.password2.errors %}<p class="form-error">{{ form.password2.errors.0 }}</p>{% endif %}
+      </div>
+
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+
+      <button type="submit" class="btn-gold btn-md w-full">Create account</button>
+
+      <p class="text-xs text-dim text-center pt-2">
+        By joining you agree to our
+        <a href="{% url 'core:terms' %}" class="underline hover:text-mist">Terms</a> and
+        <a href="{% url 'core:privacy' %}" class="underline hover:text-mist">Privacy Policy</a>.
+      </p>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-mist">
+      Already have an account?
+      <a href="{% url 'account_login' %}" class="text-gold-hi hover:text-gold underline">Sign in</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

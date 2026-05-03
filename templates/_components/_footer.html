@@ -1,0 +1,65 @@
+{% load static %}
+<footer class="bg-deep border-t border-gold/14 mt-16">
+  <div class="container-page py-12 md:py-16 grid gap-10 md:grid-cols-12">
+
+    {# ─── Brand block ─── #}
+    <div class="md:col-span-4 space-y-3">
+      <a href="{% url 'core:home' %}" class="font-serif text-2xl text-ivory">
+        Yakima<span class="text-gold">·</span>RE Hub
+      </a>
+      <p class="text-mist text-sm leading-relaxed max-w-sm">
+        {{ SITE_TAGLINE }}
+      </p>
+      <p class="label-luxe">Central Washington · Yakima · Tri-Cities</p>
+    </div>
+
+    {# ─── Link columns ─── #}
+    <div class="md:col-span-2">
+      <p class="label-luxe mb-4">Platform</p>
+      <ul class="space-y-2 text-sm">
+        <li><a href="#blog" class="text-mist hover:text-ivory transition-colors">Blog</a></li>
+        <li><a href="#tools" class="text-mist hover:text-ivory transition-colors">AI Tools</a></li>
+        <li><a href="#marketplace" class="text-mist hover:text-ivory transition-colors">Marketplace</a></li>
+        <li><a href="#forum" class="text-mist hover:text-ivory transition-colors">Community</a></li>
+      </ul>
+    </div>
+
+    <div class="md:col-span-2">
+      <p class="label-luxe mb-4">For Realtors</p>
+      <ul class="space-y-2 text-sm">
+        <li><a href="{% url 'account_signup' %}" class="text-mist hover:text-ivory transition-colors">Get verified</a></li>
+        <li><a href="#" class="text-mist hover:text-ivory transition-colors">Author a blog</a></li>
+        <li><a href="#" class="text-mist hover:text-ivory transition-colors">Become a vendor</a></li>
+        <li><a href="#" class="text-mist hover:text-ivory transition-colors">Help center</a></li>
+      </ul>
+    </div>
+
+    <div class="md:col-span-2">
+      <p class="label-luxe mb-4">Company</p>
+      <ul class="space-y-2 text-sm">
+        <li><a href="{% url 'core:about' %}" class="text-mist hover:text-ivory transition-colors">About</a></li>
+        <li><a href="{% url 'core:guidelines' %}" class="text-mist hover:text-ivory transition-colors">Guidelines</a></li>
+        <li><a href="{% url 'core:privacy' %}" class="text-mist hover:text-ivory transition-colors">Privacy</a></li>
+        <li><a href="{% url 'core:terms' %}" class="text-mist hover:text-ivory transition-colors">Terms</a></li>
+      </ul>
+    </div>
+
+    <div class="md:col-span-2">
+      <p class="label-luxe mb-4">Connect</p>
+      <ul class="space-y-2 text-sm">
+        <li><a href="mailto:hello@yakimaweb.com" class="text-mist hover:text-ivory transition-colors">Contact</a></li>
+        <li><a href="#" class="text-mist hover:text-ivory transition-colors">Instagram</a></li>
+        <li><a href="#" class="text-mist hover:text-ivory transition-colors">YouTube</a></li>
+        <li><a href="#" class="text-mist hover:text-ivory transition-colors">Newsletter</a></li>
+      </ul>
+    </div>
+  </div>
+
+  {# ─── Sub-footer ─── #}
+  <div class="border-t border-gold/14">
+    <div class="container-page py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-dim">
+      <p>© {% now "Y" %} {{ SITE_NAME }}. Independent — not affiliated with any MLS or brokerage.</p>
+      <p>Built in Yakima · WA real estate license verification via ARELLO</p>
+    </div>
+  </div>
+</footer>

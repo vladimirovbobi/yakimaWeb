@@ -1,0 +1,44 @@
+{# Generic card. Variants: default (vertical) | horizontal | image-top. #}
+{# Slot via {% block card_body %} when extending; or pass `body_html` safe-string for inline use. #}
+{% with variant=variant|default:"default" %}
+{% if href %}<a href="{{ href }}" class="group block">{% endif %}
+  <article class="surface surface-hover overflow-hidden
+                  {% if variant == 'horizontal' %}flex flex-col md:flex-row{% endif %}">
+    {% if image %}
+      <div class="{% if variant == 'horizontal' %}md:w-1/3 aspect-[4/3] md:aspect-auto{% else %}aspect-[4/3]{% endif %}
+                  overflow-hidden bg-warm">
+        <img src="{{ image }}" alt="{{ image_alt|default:'' }}"
+             class="w-full h-full object-cover group-hover:scale-[1.04]
+                    transition-transform duration-[1400ms] ease-luxe"
+             loading="lazy" decoding="async">
+      </div>
+    {% endif %}
+
+    <div class="p-6 md:p-7 space-y-3 flex-1">
+      {% if overline %}
+        <p class="label-luxe">{{ overline }}</p>
+      {% endif %}
+
+      {% if title %}
+        <h3 class="h-card group-hover:text-gold-hi transition-colors">{{ title }}</h3>
+      {% endif %}
+
+      {% if subtitle %}
+        <p class="text-sm text-mist line-clamp-2">{{ subtitle }}</p>
+      {% endif %}
+
+      {% if body_html %}
+        <div class="text-mist text-sm">{{ body_html|safe }}</div>
+      {% endif %}
+
+      {% block card_body %}{% endblock %}
+
+      {% if meta %}
+        <div class="flex items-center gap-3 pt-2 text-xs text-dim border-t border-gold/10 mt-3">
+          {{ meta|safe }}
+        </div>
+      {% endif %}
+    </div>
+  </article>
+{% if href %}</a>{% endif %}
+{% endwith %}

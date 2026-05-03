@@ -1,0 +1,50 @@
+{% load static %}<!doctype html>
+<html lang="en" class="bg-black">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080604">
+  <title>{% block title %}{{ SITE_NAME }} — {{ SITE_TAGLINE }}{% endblock %}</title>
+
+  <meta name="description" content="{% block description %}{{ SITE_DESCRIPTION }}{% endblock %}">
+
+  {# ─── OG / Twitter ─── #}
+  <meta property="og:site_name" content="{{ SITE_NAME }}">
+  <meta property="og:title" content="{% block og_title %}{{ SITE_NAME }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ SITE_DESCRIPTION }}{% endblock %}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta property="og:image" content="{% block og_image %}{% static 'img/og-default.jpg' %}{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="alternate icon" href="{% static 'img/favicon.ico' %}">
+
+  {# ─── Vite-built assets ─── #}
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+  {# JSON-LD per-page #}
+  {% block jsonld %}{% endblock %}
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="min-h-screen flex flex-col" hx-headers='{"X-Requested-With":"htmx"}'>
+
+  {# Skip link for a11y #}
+  <a href="#main"
+     class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50
+            btn-gold btn-sm">Skip to content</a>
+
+  {% include "_components/_nav.html" %}
+
+  <main id="main" class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include "_components/_footer.html" %}
+
+  <script type="module" src="{% static 'js/main.js' %}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Verify your WA real estate license — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-2xl">
+
+    <div x-data x-reveal>
+      <p class="label-luxe text-gold-hi">Realtor verification</p>
+      <h1 class="h-page mt-3">Get your verified badge.</h1>
+      <p class="mt-4 text-mist text-lg">
+        Verified Washington brokers can publish blog posts, get the trust badge across the
+        platform, and respond to community questions with their license attached.
+      </p>
+    </div>
+
+    <div x-data x-reveal:200 class="surface mt-10 p-8 md:p-10">
+      <form method="post" class="space-y-6" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="form-error" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div>
+          <label for="id_license_number" class="block text-sm font-medium text-ivory">
+            WA license number <span class="text-gold ml-1">*</span>
+          </label>
+          {{ form.license_number }}
+          {% if form.license_number.help_text %}
+            <p class="form-help">{{ form.license_number.help_text }}</p>
+          {% endif %}
+          {% if form.license_number.errors %}
+            <p class="form-error" role="alert">{{ form.license_number.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="id_license_type" class="block text-sm font-medium text-ivory">
+            License type <span class="text-gold ml-1">*</span>
+          </label>
+          {{ form.license_type }}
+        </div>
+
+        <div>
+          <label for="id_full_name" class="block text-sm font-medium text-ivory">
+            Full name on license <span class="text-gold ml-1">*</span>
+          </label>
+          {{ form.full_name }}
+        </div>
+
+        <div>
+          <label for="id_brokerage" class="block text-sm font-medium text-ivory">Brokerage</label>
+          {{ form.brokerage }}
+          <p class="form-help">Optional — shown on your public profile.</p>
+        </div>
+
+        <label class="flex items-start gap-3 text-sm text-mist cursor-pointer">
+          {{ form.consent }}
+          <span>
+            I confirm this license is mine and authorize {{ SITE_NAME }} to verify it
+            through ARELLO and re-verify monthly.
+          </span>
+        </label>
+        {% if form.consent.errors %}
+          <p class="form-error" role="alert">{{ form.consent.errors.0 }}</p>
+        {% endif %}
+
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" class="btn-gold btn-md">Submit for verification</button>
+          <a href="{% url 'core:profile' %}" class="btn-ghost btn-md">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+    <p class="mt-6 text-xs text-dim text-center">
+      Verification is provided by ARELLO using public state license data.
+      Most checks complete in under 5 seconds.
+    </p>
+  </div>
+</section>
+{% endblock %}

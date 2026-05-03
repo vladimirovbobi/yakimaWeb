@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-3xl">
+
+    <div x-data x-reveal>
+      <p class="label-luxe text-gold-hi">Privacy Policy</p>
+      <h1 class="h-display mt-4">Plain English. Last updated 2026-05-03.</h1>
+      <p class="text-mist mt-4 italic">
+        Placeholder draft pending attorney review. Not legal advice. Will be replaced
+        with reviewed version before public launch.
+      </p>
+    </div>
+
+    <div x-data x-reveal:200 class="prose-yw mt-10">
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Account info</strong> — your email address and password (hashed). Optional: full name, avatar, phone.</li>
+        <li><strong>Realtor info</strong> — license number, license type, brokerage, headshot, bio. License number is a public record.</li>
+        <li><strong>Activity</strong> — posts you write, comments you leave, leads you submit, AI tool runs.</li>
+        <li><strong>Operational logs</strong> — IP address, user agent, page views (used for security + abuse detection, retained 12 months).</li>
+        <li><strong>Moderation outcomes</strong> — every classification + human review action, retained for the life of your content for audit + appeals.</li>
+      </ul>
+
+      <h2>What we don't collect or do</h2>
+      <ul>
+        <li>We don't sell your data.</li>
+        <li>We don't run ad-network trackers.</li>
+        <li>We don't share your email with third parties (other than transactional email + ARELLO for license verification).</li>
+        <li>We don't fingerprint you across sites.</li>
+      </ul>
+
+      <h2>How we use it</h2>
+      <p>To provide the service: signups, license verification, posts, comments, AI tools,
+      marketplace leads, moderation, security. That's it.</p>
+
+      <h2>Third parties we share with</h2>
+      <ul>
+        <li><strong>ARELLO</strong> — license number + name for verification (public record).</li>
+        <li><strong>Postmark / email provider</strong> — to send you transactional email (verify, reset, notifications).</li>
+        <li><strong>Cloudflare</strong> — hosts your uploaded media + protects the site from abuse.</li>
+        <li><strong>Google Gemini API</strong> — content sent to our moderation classifier and AI tools (per Google's API terms).</li>
+        <li><strong>Sentry</strong> — server error reports (no PII included).</li>
+      </ul>
+
+      <h2>Cookies</h2>
+      <p>Session cookie for login (yw_sessionid). CSRF cookie for form security.
+      No analytics cookies. No third-party tracking cookies.</p>
+
+      <h2>Your rights</h2>
+      <ul>
+        <li><strong>Access</strong> — request a copy of your data: <a href="mailto:privacy@yakimaweb.com">privacy@yakimaweb.com</a>.</li>
+        <li><strong>Correction</strong> — edit your profile in <a href="/profile/">your account</a>.</li>
+        <li><strong>Deletion</strong> — request account deletion via email. We'll remove your account; UGC may be anonymized rather than deleted to preserve thread integrity.</li>
+        <li><strong>Export</strong> — portability via API + email request.</li>
+      </ul>
+
+      <h2>Security</h2>
+      <p>HTTPS everywhere. Passwords hashed with Argon2 / PBKDF2.
+      Two-factor authentication required for staff. IP allowlist on admin URLs.
+      Audit log of every staff action.</p>
+
+      <h2>Data retention</h2>
+      <ul>
+        <li>Account data: until you delete the account.</li>
+        <li>Operational logs (IP, UA): 12 months.</li>
+        <li>Moderation decisions: lifetime of the content + 12 months after deletion.</li>
+        <li>License verification audit trail: lifetime of your realtor profile + 7 years (industry-standard).</li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>Service is not directed at anyone under 18.</p>
+
+      <h2>Changes</h2>
+      <p>If we make material changes, we'll email you and post the diff here.</p>
+
+      <h2>Contact</h2>
+      <p><a href="mailto:privacy@yakimaweb.com">privacy@yakimaweb.com</a> for any privacy question.
+      Security issues to <a href="mailto:security@yakimaweb.com">security@yakimaweb.com</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
