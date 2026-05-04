@@ -1,41 +1,92 @@
-# State of the Project — 2026-05-03 (autonomous build update)
+# State of the Project — 2026-05-03 (full autonomous build complete)
 
 > Honest read on where we are, what works, and what's left before public launch.
 
-## TL;DR — Sprint 0a/0b/0c + 1 + 2 + Sprint 6 (partial) all landed
+## TL;DR — All 8 sprints landed (Sprint 7/8 launch artifacts ready; real-world activities deferred)
 
 Architecture migrated from Django monolith to **split: Django REST API + Next.js 15 frontend
 + Caddy reverse proxy + 8 services**. All under autonomous build per ADRs 0005-0009.
 
-**What's now done (added since prior version of this doc):**
-- ✅ Full enterprise documentation suite (12 docs + 5 ADRs, ~75K words) — VISION, SRS,
-  SAD, ICD, MTP, RTM, RISK-REGISTER, THREAT-MODEL, SECURITY-PLAYBOOK, COPY-STYLE-GUIDE,
-  RUNBOOK, ACCESS-MATRIX
-- ✅ DRF API surface across all 10 apps (`/api/public/v1/` + `/api/v1/`) with cursor
-  pagination, RFC 7807 problem+json errors, OpenAPI schema at `/api/schema/`
-- ✅ JWT in httpOnly+SameSite=Strict cookies (per ADR-0008) + CSRF double-submit
-- ✅ Custom permissions (IsRealtor / IsVendor / IsModerator / IsOperator / IsOwnerOrReadOnly /
-  RequiresOTP)
-- ✅ 8-service Docker stack (caddy / frontend / api / db / redis / celery / beat / img-worker)
-  with Caddy rate-limit module via xcaddy
-- ✅ Next.js 15 App Router frontend (`/frontend/`) with full vrov-new tokens — 98 .ts/.tsx
-  files, public + auth + dashboard route groups
-- ✅ Seed data management commands (categories, flairs, demo content, demo marketplace,
-  brokerages stub, seed_all wrapper)
-- ✅ Sprint 2 polish: throttles wired everywhere, OTP enforcement on /ops/, file-size
-  validators on every ImageField, Gemini spend cap (Redis-backed), vendor tagline moderation
-- ✅ 12 Playwright critical-path specs (homepage, browse, auth-gating, signup, login/logout,
-  blog flow, forum vote+reply, marketplace inquiry, mobile nav, a11y, SEO, security headers)
-- ✅ Per-author RSS, OG image generator (Pillow 1200x630)
-- ✅ ARELLO graceful mock when no key, Gemini fail-closed when no key, Postmark console
-  fallback, Sentry DSN-gated init with PII scrubbing
+### Sprint 0–6 deliverables (all committed, 177/177 pytest green)
 
-**Test status:** 86/86 pytest green throughout (no regressions across any commit).
+**Sprint 0a — Documentation suite (~75K words):**
+- VISION, SRS (70 FR + 32 NFR), SAD (C4 + ERD), ICD, MTP, RTM (102 reqs), RISK-REGISTER (25),
+  THREAT-MODEL (STRIDE), SECURITY-PLAYBOOK (10 IR runbooks), COPY-STYLE-GUIDE, RUNBOOK,
+  ACCESS-MATRIX + ADRs 0005-0009
 
-**Roughly 80-85% to public launch** — remaining work is bounded: real API key wiring
-(ARELLO live + Gemini live + Postmark + R2 + Sentry DSN), polish on mod console v2 /
-furniture remover real impl / vendor onboarding wizard, full security review + pen test +
-load test, attorney-reviewed Privacy & Terms.
+**Sprint 0b/0c — Architecture split:**
+- DRF API surface across 10 apps (`/api/public/v1/` + `/api/v1/`)
+- JWT in httpOnly+SameSite=Strict cookies + CSRF double-submit
+- 8 custom permission classes including RequiresOTP
+- 8-service Docker stack (caddy / frontend / api / db / redis / celery / beat / img-worker)
+- Caddy with rate-limit module via xcaddy build
+- Next.js 15 App Router frontend (~150 .ts/.tsx files) — full vrov-new tokens, public + auth +
+  dashboard route groups
+
+**Sprint 1 — Real APIs + seed data + brand:**
+- 6 management commands (categories, flairs, demo content + marketplace, brokerages, seed_all)
+- ARELLO graceful mock, Gemini fail-closed, Postmark console fallback, Sentry DSN-gated init
+- Pillow OG image generator + per-author RSS feeds
+
+**Sprint 2 — Production polish:**
+- 7 throttle scopes wired (vote/lead/ai_tool/comment/forum_write/flag/message)
+- OTP enforcement on /api/v1/ops/ via RequiresOTP composed with IsOperator
+- File-size validators on User.avatar / RealtorProfile.headshot / Post.hero_image / Service.hero_image
+- Redis-backed Gemini daily spend cap with SpendCapExceeded
+- Vendor tagline moderation via pre_save signal
+
+**Sprint 3 — Furniture remover real implementation:**
+- Two-call Gemini flow: Pro identifies masks → Image inpaints empty room
+- Spend cap pre-flight + image moderation (OCR injection screen) + retry-on-transient
+- Frontend: drag-and-drop upload, SSE-driven processing, before/after slider
+- 9 image-injection adversarial fixtures + 20 pytest tests
+
+**Sprint 4 — Vendor onboarding + LeadMessage + Notifications:**
+- VendorProfile wizard_state JSON; 5-step wizard (Business → Categories → Services → Gallery → Publish)
+- Threaded LeadMessage UI with SSE + 10s polling fallback, Cmd+Enter send
+- New apps/notifications app: Notification model + signal_hooks + email digest beat task
+- NotificationBell in dashboard header, /dashboard/notifications full list page
+- 14 new tests
+
+**Sprint 5 — Mod console v2 + content polish:**
+- ActionTemplate model + seeder (7 templates)
+- mod_stats service: agreement_rate, reversal_rate, avg_response_minutes, current_streak
+- Mod queue keyboard shortcuts (A/R/E/T/N/I), escalation modal, InvestigateDrawer
+- TipTap rich-text editor + tag M2M + Comment.image + image moderation pipeline
+- 26 new tests
+
+**Sprint 6 — E2E + bulletproof security:**
+- 30 Playwright critical-path specs total (12 from earlier + 18 added) covering signup,
+  realtor flow, vendor onboarding, lead conversation, forum lifecycle, AI tools,
+  rate limits, prompt injection, CSRF, OTP enforcement, 2FA, password reset, role-aware
+  dashboard, offline graceful, accessibility, SEO, security headers
+- 4 k6 load tests (baseline 1K VU / forum_burst / ai_tool / 24h sustained soak)
+- Defense-in-depth: COOP/COEP/X-Robots-Tag headers middleware, StrictCSRFMixin,
+  anomaly_detector (cross-user IP, mass-flag, vendor review surge), session_fingerprint
+  middleware (UA-class + IP /24 binding)
+- 13 additional adversarial fixtures (image OCR, unicode confusables, zero-width,
+  markdown link spoof, base64 filename, TOCTOU, ROT13, homoglyph, etc.) — 45 total
+- 28 new tests (image_injection 10 + anomaly_detector 8 + session_fingerprint 10)
+
+**Sprint 7/8 — Launch prep artifacts:**
+- docs/launch/PRESS-KIT.md, BETA-PROGRAM.md, STATUS-PAGE.md, CRISIS-RESPONSE.md,
+  LAUNCH-CHECKLIST.md (Day -14 to Day +1)
+- Coming-soon gated launch page with NEXT_PUBLIC_LAUNCH_GATE env switch
+
+**Test status:** **177/177 pytest green** (up from 86 at start of session). 30 Playwright
+specs scaffolded.
+
+### What's deferred (real-world activities only)
+
+- Actual ARELLO sandbox key (vendor onboarding pending)
+- Live Gemini API key (test runs use mocked responses)
+- Postmark live token + R2 bucket creation + Sentry project
+- Third-party penetration test engagement (1-week external)
+- Attorney review of Privacy + Terms
+- 24-hour load-test soak run (script ready)
+- Beta cohort outreach + onboarding calls (templates ready)
+- Brand assets (logo SVG + favicon + headshots — placeholders in place)
+- Public launch press outreach
 
 ## What works right now (verified)
 
