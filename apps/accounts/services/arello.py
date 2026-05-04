@@ -1,14 +1,17 @@
 """ARELLO API client. Spec: docs/research/arello-api-notes.md.
 
 Sandbox-first. Mockable in tests via the `responses` library.
+When `ARELLO_API_KEY` is missing, returns a mocked response with `mocked=True`
+flag so consumers can flag unverified profiles.
 """
 import logging
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from typing import Literal
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +47,7 @@ class LicenseRecord:
     last_name: str = ""
     expiration_date: date | None = None
     raw: dict = field(default_factory=dict)
+    mocked: bool = False
 
     @classmethod
     def not_found(cls, license_number: str, jurisdiction: str = "WA") -> "LicenseRecord":
@@ -53,6 +57,32 @@ class LicenseRecord:
         )
 
 
+def _mocked_response(license_number: str, last_name: str, jurisdiction: str) -> "LicenseRecord":
+    """Dev/test mock when ARELLO_API_KEY is absent."""
+    expires = (timezone.now().date() + timedelta(days=365))
+    raw = {
+        "license_number":  license_number.strip().upper(),
+        "jurisdiction":    jurisdiction,
+        "license_type":    "broker",
+        "status":          "ACTIVE",
+        "first_name":      "Demo",
+        "last_name":       last_name or "Broker",
+        "expiration_date": expires.isoformat(),
+        "mocked":          True,
+    }
+    return LicenseRecord(
+        license_number=raw["license_number"],
+        jurisdiction=jurisdiction,
+        license_type="broker",
+        status="ACTIVE",
+        first_name="Demo",
+        last_name=last_name or "Broker",
+        expiration_date=expires,
+        raw=raw,
+        mocked=True,
+    )
+
+
 def verify_license(
     license_number: str,
     last_name: str = "",
@@ -60,9 +90,14 @@ def verify_license(
     *,
     timeout: int = 10,
 ) -> LicenseRecord:
-    """Synchronous ARELLO call. Raise on transport errors; return NOT_FOUND on count=0."""
+    """Synchronous ARELLO call. Raise on transport errors; return NOT_FOUND on count=0.
+
+    When `ARELLO_API_KEY` is missing, returns a mocked verified record. Consumers
+    can branch on `LicenseRecord.mocked` to flag unverified profiles in dev.
+    """
     if not settings.ARELLO_API_KEY:
-        raise ARelloConfigError("ARELLO_API_KEY not configured")
+        log.warning("ARELLO_API_KEY missing — returning mocked verification")
+        return _mocked_response(license_number, last_name, jurisdiction)
 
     url = f"{settings.ARELLO_BASE_URL.rstrip('/')}/api/v2/search"
     headers = {"Authorization": f"Bearer {settings.ARELLO_API_KEY}",

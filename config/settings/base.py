@@ -185,7 +185,13 @@ AXES_RESET_ON_SUCCESS = True
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="hello@yakimaweb.com")
 SERVER_EMAIL = env("SERVER_EMAIL", default="ops@yakimaweb.com")
-ANYMAIL = {"POSTMARK_SERVER_TOKEN": env("POSTMARK_SERVER_TOKEN", default="")}
+POSTMARK_SERVER_TOKEN = env("POSTMARK_SERVER_TOKEN", default="")
+ANYMAIL = {"POSTMARK_SERVER_TOKEN": POSTMARK_SERVER_TOKEN}
+
+# Graceful dev fallback — no Postmark token means console backend.
+# In prod.py we raise if POSTMARK_SERVER_TOKEN is missing.
+if not POSTMARK_SERVER_TOKEN:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # ─── Storage ─────────────────────────────────────────────────────────────
 STATIC_URL = "static/"
@@ -360,6 +366,57 @@ CSP_BASE_URI = ("'self'",)
 CSP_FORM_ACTION = ("'self'",)
 CSP_INCLUDE_NONCE_IN = ("script-src", "style-src")
 CSP_OBJECT_SRC = ("'none'",)
+
+# ─── Sentry ──────────────────────────────────────────────────────────────
+DJANGO_ENV = env("DJANGO_ENV", default="dev")
+SENTRY_DSN = env("SENTRY_DSN", default="")
+
+
+def _sentry_before_send(event, hint):
+    """Strip credentials/PII before sending to Sentry."""
+    SCRUB_KEYS = {
+        "password", "passwd", "secret", "token", "api_key", "apikey",
+        "authorization", "csrf", "session", "access_token", "refresh_token",
+        "set-cookie", "cookie",
+    }
+
+    def _scrub(obj):
+        if isinstance(obj, dict):
+            return {
+                k: ("[scrubbed]" if k.lower() in SCRUB_KEYS else _scrub(v))
+                for k, v in obj.items()
+            }
+        if isinstance(obj, list):
+            return [_scrub(x) for x in obj]
+        return obj
+
+    request = event.get("request") or {}
+    if "headers" in request:
+        request["headers"] = _scrub(request["headers"])
+    if "cookies" in request:
+        request["cookies"] = "[scrubbed]"
+    if "data" in request:
+        request["data"] = _scrub(request["data"])
+
+    extra = event.get("extra") or {}
+    event["extra"] = _scrub(extra)
+    return event
+
+
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration(), CeleryIntegration()],
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        environment=DJANGO_ENV,
+        send_default_pii=False,
+        before_send=_sentry_before_send,
+    )
 
 # ─── Logging ─────────────────────────────────────────────────────────────
 LOGGING = {

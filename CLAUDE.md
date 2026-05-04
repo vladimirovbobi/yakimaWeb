@@ -18,20 +18,24 @@ Target: 10K MAU steady state, future-proof for content + features without rewrit
 
 | Layer | Choice |
 |---|---|
-| Framework | Django 5.x monolith with apps inside (no microservices) |
-| Frontend | HTMX + Alpine.js + Motion One + Tailwind. React islands ONLY in `static/src/react/` for AI tools + marketplace search |
-| DB | Postgres 16 (FTS via tsvector, JSONB for flex, pgvector ready) |
+| Architecture | **Split** per ADR-0005: Django REST API + Next.js 15 frontend + Caddy reverse proxy. **8 services**. Supersedes ADR-0001. |
+| Backend | Django 5.x + DRF + drf-spectacular OpenAPI + SimpleJWT + Strawberry GraphQL (read-only) |
+| Frontend | **Next.js 15 App Router** + React 19 RSC + Tailwind 3.4 + Framer Motion 11 + TanStack Query (per ADR-0006). Lives in `/frontend/`. |
+| Auth | **JWT in httpOnly + SameSite=Strict cookies** (`yw_access` 15min, `yw_refresh` 7d) + CSRF double-submit (per ADR-0008). django-allauth signup. django-otp staff 2FA. django-axes throttle. |
+| Reverse proxy | **Caddy 2.x** with rate-limit module (per ADR-0007) — `/api/*` + `/admin/*` → `api:8000`, else → `frontend:3000` |
+| DB | Postgres 16 (FTS via tsvector; **pgvector schema-ready** per ADR-0009; activation deferred to v1.1) |
 | Cache / queue / sessions | Redis 7 |
-| Async | Celery + Beat — every AI call goes through Celery (no synchronous Gemini in views) |
+| Async | Celery + Beat + dedicated img-worker (image-heavy tasks routed via `apps/core/celery_routes.py`) |
 | AI | Google Gemini — 2.5 Flash for moderation, 2.5 Pro for tools |
-| Auth | django-allauth (email-only) + django-otp (TOTP for staff) + django-axes (throttle) |
 | License verify | ARELLO API (not DOL — no public DOL API) |
-| Storage / CDN | Cloudflare R2 + CDN, Caddy in front of compose, image-resize worker |
+| Storage / CDN | Cloudflare R2 + CDN, signed URLs (5min TTL) |
 | Email | Postmark via django-anymail |
 | Hosting | Railway (Phase 1) — Fly.io is the alternate |
 | Monitoring | Sentry + Better Stack |
 
-ADRs: `docs/adr/0001-django-monolith.md`, `0002-arello-for-license-verification.md`, `0003-gemini-as-ai-provider.md`, `0004-lead-gen-only-marketplace-v1.md`.
+ADRs: `0001-django-monolith.md` (superseded by 0005), `0002-arello-for-license-verification.md`, `0003-gemini-as-ai-provider.md`, `0004-lead-gen-only-marketplace-v1.md`, **`0005-split-architecture.md`**, **`0006-nextjs-app-router.md`**, **`0007-caddy-reverse-proxy.md`**, **`0008-jwt-httponly-auth.md`**, **`0009-pgvector-future-proof.md`**.
+
+Documentation suite: `docs/{VISION-AND-SCOPE,SRS,SAD,ICD,MTP,RTM,RISK-REGISTER,THREAT-MODEL,SECURITY-PLAYBOOK,COPY-STYLE-GUIDE,ACCESS-MATRIX,RUNBOOK,STATE-OF-THE-PROJECT}.md`.
 
 ## Visual quality bar
 
@@ -48,26 +52,36 @@ Match `C:\Users\vladi\OneDrive\Desktop\Projects\vrov-new`. Source of truth for t
 
 ```
 yakimaWeb/
-├── apps/
-│   ├── core/         shared mixins, marketing pages, healthz
-│   ├── accounts/     User, RealtorProfile, VendorProfile, ARELLO client, verify flow
-│   ├── content/      [Phase 2] Post (polymorphic), Comment, lead-magnet pages
-│   ├── tools/        [Phase 3] AI lead magnets (furniture remover, description writer)
-│   ├── forum/        [Phase 4] ForumThread, ForumReply, Vote, ranking
-│   ├── marketplace/  [Phase 5] Vendor, Service, Package, Bundle, Lead, Review, Category tree
-│   ├── moderation/   ModeratableMixin + 3-layer Gemini pipeline + injection guard
-│   ├── audit/        ActionLog + AccessLog + signals + middleware
-│   ├── operations/   [Phase 6] Operator dashboard
-│   └── admin_tools/  IP allowlist + 2FA hooks + role decorators
-├── config/           settings/{base,dev,prod}, urls, celery, wsgi/asgi
-├── templates/        base.html, _components/, account/, accounts/, core/
-├── static/src/       Tailwind + Alpine + Motion + HTMX entry → built by Vite to static/dist/
-├── docs/
-│   ├── adr/          architectural decision records
-│   ├── research/     design audit, ARELLO notes, marketplace patterns, guidelines, moderation
-│   └── RUNBOOK.md    operations manual
-├── tests/e2e/        Playwright critical-path tests
-└── .planning/phases/ per-phase detailed plan files
+├── apps/                Django backend (REST API only post-Sprint-0c)
+│   ├── core/            shared mixins + base API utilities (auth, permissions, errors, pagination)
+│   ├── accounts/        User, RealtorProfile, VendorProfile, ARELLO client; api/{auth,me,realtor,public}
+│   ├── content/         Post, Comment, NewsletterSubscription, SocialEmbed; api/{public,private}
+│   ├── tools/           AI lead magnets; api/{public,private}
+│   ├── forum/           ForumThread, Reply, Vote, Flair; api/{public,private,votes}
+│   ├── marketplace/     Vendor, Service, Package, Bundle, Lead, Review; api/{public_*,private_*,leads}
+│   ├── moderation/      ModeratableMixin + 3-layer pipeline; api/ (queue, decisions, flags, investigate)
+│   ├── audit/           ActionLog + AccessLog (read-only via api/)
+│   ├── operations/      Operator dashboard; api/ (cards, suspend, vendor status, takedown)
+│   └── admin_tools/     IP allowlist + 2FA hooks + role decorators (no API surface)
+├── config/              settings/{base,dev,prod}, urls, api_urls, celery, wsgi/asgi
+├── frontend/            Next.js 15 App Router (per ADR-0006)
+│   ├── app/             (public)/, (auth)/, (dashboard)/ route groups
+│   ├── components/      layout/, reveal/, ui/, marketing/, content/, forum/, marketplace/, tools/, ops/
+│   ├── lib/             api/, auth/, utils
+│   ├── styles/          tailwind.config.ts (vrov-new tokens ported)
+│   ├── tests/           e2e/ (Playwright), unit/ (Vitest)
+│   ├── middleware.ts    JWT cookie gate + CSP nonce
+│   └── Dockerfile       multi-stage Node 20-alpine standalone
+├── caddy/               Caddy reverse proxy
+│   ├── Caddyfile        routing + edge security headers + rate limit
+│   └── Dockerfile       xcaddy build w/ rate-limit module
+├── templates/           LEGACY — kept only for admin + emails
+├── static/              LEGACY — Vite assets only used for legacy template URLs
+├── docs/                full enterprise doc suite (see Stack table)
+│   ├── adr/             9 ADRs (0001 superseded by 0005)
+│   └── research/        design audit, ARELLO notes, marketplace patterns
+├── tests/e2e/           LEGACY top-level Playwright (frontend/tests/e2e/ is the new home)
+└── .planning/phases/    per-phase detailed plan files
 ```
 
 ## Conventions (apply to every change)
@@ -80,8 +94,8 @@ yakimaWeb/
 | AI calls | ALWAYS async via Celery — synchronous Gemini in views is forbidden |
 | UGC | Every UGC model inherits `ModeratableMixin` — no exceptions |
 | Staff writes | Auto-logged via `apps/audit/signals.py` — don't bypass with `objects.update()` |
-| Templates | Tailwind utility classes only — custom CSS only in `static/src/css/tailwind.css` w/ comment |
-| JS | Alpine for state, HTMX for server interactions, Motion One for animations, React only inside `static/src/react/` islands |
+| Templates | LEGACY — admin + email only. New surfaces are Next.js components in `frontend/`. |
+| JS | React 19 RSC by default (server components), `"use client"` only when Framer Motion / hooks / event handlers required. Tailwind utility classes; custom CSS only in `frontend/app/globals.css` `@layer utilities` w/ comment. |
 | Secrets | All in `.env`, never committed; `django-environ` reads them; production via Railway/Fly secrets |
 | Migrations | One per logical change, named descriptively |
 | Code style | Caveman-tight. Minimal comments. No `# noqa` without reason. Run `ruff check && ruff format && djlint templates/` before commit |
@@ -106,18 +120,33 @@ yakimaWeb/
 
 ## Local dev
 
+**Whole stack (8 services, recommended):**
+
 ```bash
-cp .env.example .env       # set DJANGO_SECRET_KEY (50 random chars)
+cp .env.example .env        # set DJANGO_SECRET_KEY (50 random chars)
+docker compose up -d        # caddy + frontend + api + db + redis + celery + beat + img-worker
+docker compose --profile migrate run --rm migrate
+docker compose exec api python manage.py createsuperuser
+# Visit http://localhost (Caddy fronts everything)
+```
+
+**Backend only (for API/test work):**
+
+```bash
+cp .env.example .env
 uv venv ; uv pip install -e . --group dev
-npm install ; npm run build
 docker compose up -d db redis
 .venv/Scripts/python.exe manage.py migrate
-.venv/Scripts/python.exe manage.py createsuperuser
-.venv/Scripts/python.exe manage.py runserver
+.venv/Scripts/python.exe manage.py runserver  # http://localhost:8000
+```
 
-# In other shells:
-.venv/Scripts/python.exe -m celery -A config worker -l info
-.venv/Scripts/python.exe -m celery -A config beat -l info
+**Frontend only (against running backend):**
+
+```bash
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev                 # http://localhost:3000
 ```
 
 ## Quality gates (every PR)
@@ -141,13 +170,17 @@ docker compose up -d db redis
 
 - [x] **Phase 0** — Research & Reference docs
 - [x] **Phase 1** — Foundation (auth, license verify, design system, AI moderation, audit, admin lockdown)
-- [ ] **Phase 2** — Content System (Post + Comment + editor + lead-magnet pages)
-- [ ] **Phase 3** — AI Lead Magnets (port furniture remover from virtual-staging-app)
-- [ ] **Phase 4** — Forum (Reddit-style)
-- [ ] **Phase 5** — Marketplace (Fiverr-shaped, lead-gen only)
-- [ ] **Phase 6** — Control Surfaces (Mod console + Operator dashboard)
-- [ ] **Phase 7** — Social integration (YouTube/Instagram embeds)
-- [ ] **Phase 8** — Production polish (SEO + perf + a11y + final security review)
+- [x] **Phases 2-8 scaffold** — models + Phase-1-era views (preserved as legacy until Next.js parity)
+- [x] **Sprint 0a** — Full enterprise doc suite (RFP, SRS, SAD, ICD, MTP, RTM, Risk, Threat Model, Security Playbook, Copy Guide, Access Matrix) + ADRs 0005-0009
+- [x] **Sprint 0b/0c** — Architecture split: DRF backend + Next.js 15 frontend + Caddy + img-worker (8 services)
+- [ ] **Sprint 1** — Real APIs (ARELLO/Gemini/Postmark/R2/Sentry) + seed data + brand assets
+- [ ] **Sprint 2** — Production polish: CSP nonces, rate limits, OTP, spend cap, Lighthouse 95+, axe-core 0
+- [ ] **Sprint 3** — Furniture remover real implementation
+- [ ] **Sprint 4** — Vendor onboarding wizard + LeadMessage UI + notification center
+- [ ] **Sprint 5** — Mod console v2 + content polish
+- [ ] **Sprint 6** — 25-30 Playwright critical-path specs + final security review + k6 load test
+- [ ] **Sprint 7** — Beta launch (private invite, monitoring, feedback iteration)
+- [ ] **Sprint 8** — Public launch (attorney pass, press kit, soft + hard launch)
 
 ## Master plan + per-phase plans
 

@@ -1,8 +1,7 @@
-"""Production settings — security headers, Sentry, S3 storage, no debug."""
-import sentry_sdk
-from sentry_sdk.integrations.celery import CeleryIntegration
-from sentry_sdk.integrations.django import DjangoIntegration
+"""Production settings — security headers, S3 storage, no debug.
 
+Sentry init now lives in base.py (auto-engages on SENTRY_DSN presence).
+"""
 from .base import *  # noqa: F401, F403
 from .base import env
 
@@ -30,13 +29,10 @@ CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
 CSP_IMG_SRC = ("'self'", "data:", "https:")
 CSP_CONNECT_SRC = ("'self'",)
 
-# ─── Sentry ─────────────────────────────────────────────────────────────
-SENTRY_DSN = env("SENTRY_DSN", default="")
-if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration(), CeleryIntegration()],
-        traces_sample_rate=0.1,
-        send_default_pii=False,
-        environment="production",
+# ─── Email — Postmark required in prod ─────────────────────────────────
+if not env("POSTMARK_SERVER_TOKEN", default=""):
+    raise RuntimeError(
+        "POSTMARK_SERVER_TOKEN is required in production. "
+        "Set it in Railway/Fly secrets."
     )
+EMAIL_BACKEND = "anymail.backends.postmark.EmailBackend"
