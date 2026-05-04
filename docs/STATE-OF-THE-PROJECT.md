@@ -73,8 +73,25 @@ Architecture migrated from Django monolith to **split: Django REST API + Next.js
   LAUNCH-CHECKLIST.md (Day -14 to Day +1)
 - Coming-soon gated launch page with NEXT_PUBLIC_LAUNCH_GATE env switch
 
-**Test status:** **177/177 pytest green** (up from 86 at start of session). 30 Playwright
-specs scaffolded.
+**Test status:** **208/208 pytest green** (up from 86 at start of session). 30+ Playwright
+specs scaffolded. **End-to-end smoke verified live**: 9 public endpoints return 200 with real
+seed data (37 categories, 7 flairs, 20 brokerages, 7 action templates, tool catalog, site meta).
+`/api/v1/me/` correctly 401 for anonymous.
+
+### Final integration polish (this session)
+
+- All 11 backend integration gaps closed (uploads endpoint, SSE streams for leads + mod-queue,
+  /me/activity, Surface.INVESTIGATION, Brokerage model + 20-row seed, audit↔notifications
+  circular import broken via lazy imports, QueueItem.author_id resolver, vendor publish
+  materializes Service+Package rows, TipTap allowlist verified, image moderation routing fixed)
+- Mobile-friendly comprehensive audit: PWA manifest + safe-area insets + 5-item role-aware
+  bottom nav + 44x44 touch targets enforced via [data-touch] attribute selector + hover-only
+  effects disabled on touch devices + 16px minimum input font (no iOS zoom) + sheet-mobile
+  pattern (popovers become bottom sheets <640px) + scroll-strip momentum
+- Brand assets generated: SVG logos (logo.svg, logo-mark.svg, favicon.svg), favicon.ico
+  multi-size + apple-touch-icon + icon-192/512.png, 5 hero placeholders, 6 furniture-remover
+  before/after demo JPEGs, 5 empty-state SVG illustrations
+- Redis published to host for dev parity with db (prod overlay drops it)
 
 ### What's deferred (real-world activities only)
 
