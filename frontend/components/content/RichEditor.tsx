@@ -47,7 +47,7 @@ export default function RichEditor({
   useEffect(() => {
     if (!editor) return;
     if (value !== editor.getHTML()) {
-      editor.commands.setContent(value || "", { emitUpdate: false });
+      editor.commands.setContent(value || "", false);
     }
   }, [value, editor]);
 

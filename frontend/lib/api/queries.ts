@@ -28,10 +28,10 @@ interface ThreadsListParams {
   cursor?: string;
 }
 
-function qs(params: Record<string, unknown> | undefined) {
+function qs(params: Record<string, unknown> | object | undefined) {
   if (!params) return "";
   const usp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
+  for (const [k, v] of Object.entries(params as Record<string, unknown>)) {
     if (v == null || v === "") continue;
     usp.set(k, String(v));
   }

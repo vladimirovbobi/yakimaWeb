@@ -31,8 +31,8 @@ export default function TermsPage() {
 
           <h2>Your account</h2>
           <p>
-            You're responsible for what happens under your account. Use a
-            unique password. Enable 2FA. Don't share your account. If you
+            You&rsquo;re responsible for what happens under your account. Use a
+            unique password. Enable 2FA. Don&rsquo;t share your account. If you
             suspect compromise, change your password and contact us.
           </p>
 
@@ -41,8 +41,8 @@ export default function TermsPage() {
             You retain ownership of content you post. By posting, you grant
             Yakima Web a non-exclusive worldwide license to display,
             distribute, and moderate that content on the platform. You promise
-            you have the right to post it and that it doesn't violate the law,
-            our guidelines, or anyone else's rights.
+            you have the right to post it and that it doesn&rsquo;t violate the law,
+            our guidelines, or anyone else&rsquo;s rights.
           </p>
 
           <h2>License verification</h2>
@@ -56,10 +56,10 @@ export default function TermsPage() {
 
           <h2>Marketplace</h2>
           <p>
-            The marketplace is lead-generation only. We don't process payments,
-            we don't escrow funds, we don't guarantee work quality. Your
+            The marketplace is lead-generation only. We don&rsquo;t process payments,
+            we don&rsquo;t escrow funds, we don&rsquo;t guarantee work quality. Your
             agreement is between you and the vendor. Reviews are honest
-            opinions of users; we don't validate them as fact.
+            opinions of users; we don&rsquo;t validate them as fact.
           </p>
 
           <h2>Fair Housing</h2>

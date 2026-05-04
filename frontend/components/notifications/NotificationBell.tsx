@@ -166,7 +166,7 @@ export default function NotificationBell() {
               </li>
             ) : items.length === 0 ? (
               <li className="px-4 py-6 text-center text-mist text-sm">
-                You're all caught up.
+                You&rsquo;re all caught up.
               </li>
             ) : (
               items.map((n) => (

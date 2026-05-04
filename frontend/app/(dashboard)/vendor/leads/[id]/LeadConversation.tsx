@@ -24,7 +24,7 @@ export interface LeadDetail {
   created_at: string;
 }
 
-export interface LeadMessageDto extends ApiMessage {}
+export type LeadMessageDto = ApiMessage;
 
 interface Props {
   currentUserId: number;

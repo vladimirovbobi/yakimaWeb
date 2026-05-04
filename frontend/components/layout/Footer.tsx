@@ -50,7 +50,7 @@ export default function Footer() {
               Yakima Web
             </div>
             <p className="text-mist text-sm leading-relaxed max-w-xs">
-              Central Washington's home for realtors, services, and market
+              Central Washington&rsquo;s home for realtors, services, and market
               truth.
             </p>
           </div>

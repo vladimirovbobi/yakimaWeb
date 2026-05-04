@@ -154,7 +154,7 @@ export default function ToolsLandingPage() {
               <p className="text-mist leading-relaxed max-w-2xl mb-3">
                 10 runs per hour for any signed-in user. Verified realtors get a
                 higher quota and priority queue. We rate-limit to keep costs
-                sane and to stop scrapers - it's not artificial scarcity.
+                sane and to stop scrapers &mdash; it&rsquo;s not artificial scarcity.
               </p>
               <p className="text-mist leading-relaxed max-w-2xl">
                 Every output passes our moderation pipeline before it lands in

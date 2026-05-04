@@ -55,7 +55,7 @@ export default async function StepPage({
       completed={completed as string[]}
       data={wizardData}
       profile={{
-        business_name: me?.business_name || "",
+        name: me?.business_name || "",
         tagline: me?.tagline || "",
         website: me?.website || "",
         contact_phone: me?.contact_phone || "",

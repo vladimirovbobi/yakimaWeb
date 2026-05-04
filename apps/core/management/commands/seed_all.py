@@ -2,13 +2,15 @@
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-
 SEEDS = [
-    ("seed_categories",        "Categories"),
-    ("seed_flairs",            "Forum flairs"),
-    ("seed_demo",              "Demo content"),
-    ("seed_demo_marketplace",  "Demo marketplace"),
-    ("seed_brokerages",        "Brokerages"),
+    ("seed_categories",            "Categories"),
+    ("seed_flairs",                "Forum flairs"),
+    ("seed_brokerages",            "Brokerages"),
+    ("seed_action_templates",      "Moderation action templates"),
+    ("seed_demo",                  "Demo content (base)"),
+    ("seed_demo_marketplace",      "Demo marketplace (base)"),
+    ("seed_demo_extras",           "Extended posts + threads + comments + replies"),
+    ("seed_demo_marketplace_extras", "Extended vendors + bundles + leads + reviews"),
 ]
 
 

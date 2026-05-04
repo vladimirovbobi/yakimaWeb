@@ -88,6 +88,7 @@ ignore = ["S101", "S105", "S106", "DJ001"]
 "**/tests/**" = ["S", "BLE"]
 "**/test_*.py" = ["S", "BLE"]
 "**/conftest.py" = ["S"]
+"**/management/commands/seed_*.py" = ["S311", "E501"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.dev"

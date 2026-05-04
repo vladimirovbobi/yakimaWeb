@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch, ApiError } from "@/lib/api/fetch";
+import { ApiError } from "@/lib/api/fetch";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 

@@ -54,10 +54,10 @@ export default function PostCard({ post, priority }: PostCardProps) {
           <div className="mt-auto flex items-center justify-between gap-4 pt-5 border-t border-gold/14">
             <div className="flex items-center gap-3 min-w-0">
               {(() => {
-                const author = post.author || {};
-                const name = author.display_name || author.full_name || author.email || "Author";
-                const avatar = author.avatar_url || author.avatar || null;
-                const verified = !!(author.is_realtor && (author.is_verified || author.verified));
+                const author = post.author || ({} as Partial<typeof post.author>);
+                const name = author.display_name || "Author";
+                const avatar = author.avatar_url || null;
+                const verified = !!(author.is_realtor && author.is_verified);
                 return (
                   <>
                     {avatar ? (
