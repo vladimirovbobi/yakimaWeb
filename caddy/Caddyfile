@@ -1,0 +1,78 @@
+# ============================================================================
+# Yakima Real Estate Hub — Caddyfile (dev + prod via $DOMAIN env)
+# ----------------------------------------------------------------------------
+# Routes:
+#   /api/*, /admin/*, /accounts/*, /sitemap.xml, /robots.txt, /healthz, /static/*
+#       → api:8000 (Django REST + Django admin + static)
+#   everything else → frontend:3000 (Next.js 15)
+#
+# Edge rate-limit: 60 req/min per IP for unauthenticated requests
+#   (sessioned users carry yw_access cookie and bypass — backend DRF throttle
+#   takes over for them).
+#
+# Requires: caddy-ratelimit module (added via xcaddy in caddy/Dockerfile).
+# If you swap back to plain caddy:2-alpine, comment the rate_limit block —
+# DRF backend throttling alone is the v1 fallback.
+# ============================================================================
+
+{
+    admin :2019
+    auto_https off  # dev. Production overlay flips via env / Caddy auto-detect.
+}
+
+{$DOMAIN:localhost} {
+    encode gzip zstd
+
+    # Block external access to the Caddy admin endpoint accidentally exposed
+    # via path. (admin :2019 listens on the container, which we never publish.)
+    @admin path /caddy-admin/*
+    handle @admin {
+        respond "404" 404
+    }
+
+    # Edge security headers (defense-in-depth; Django + Next.js add their own).
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options DENY
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    # Edge rate limit — anonymous traffic only (60 rpm per IP).
+    # Authenticated users (yw_access cookie present) skip this and hit
+    # DRF's per-user throttle on the backend.
+    @ratelimit not header_regexp Cookie "yw_access"
+    rate_limit @ratelimit {
+        zone hot {
+            key {remote_host}
+            events 60
+            window 1m
+        }
+    }
+
+    # API + Django admin + auth + sitemaps + healthz + static → Django.
+    @api path /api/* /admin/* /accounts/* /sitemap.xml /robots.txt /healthz /static/*
+    handle @api {
+        reverse_proxy api:8000 {
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # Everything else → Next.js frontend.
+    handle {
+        reverse_proxy frontend:3000 {
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}

@@ -1,24 +1,155 @@
+# ============================================================================
+# Yakima Real Estate Hub — Dev compose (8 services per ADR-0005)
+# ----------------------------------------------------------------------------
+# Topology: Caddy (edge) → frontend (Next.js) + api (Django REST)
+#           api/celery/beat/img-worker share root Dockerfile.
+#           img-worker pulls only "images" queue (Pillow-heavy tasks).
+#
+# Migrations:
+#   Run as one-shot via `--profile migrate`:
+#     docker compose --profile migrate run --rm migrate
+#   The api service no longer runs migrations on every start (was racy with
+#   multiple replicas + slowed restarts). Run migrate explicitly after deploys.
+#
+# Production overlay:
+#   docker compose -f docker-compose.yml -f compose.prod.yml up -d
+# ============================================================================
+
 services:
+  # ─── Edge / TLS / reverse proxy ──────────────────────────────────────────
+  caddy:
+    build: ./caddy            # custom build adds caddy-ratelimit module via xcaddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      # Admin endpoint (2019) is NOT published — internal-only for healthchecks.
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      # Caddy admin API on :2019 confirms config loaded.
+      test: ["CMD", "wget", "-qO-", "http://localhost:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [yakimaweb-net]
+
+  # ─── Next.js 15 frontend (RSC + client) ──────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "3000"                # not published — Caddy fronts it
+    env_file:
+      - path: ./frontend/.env
+        required: false       # NEXT_PUBLIC_*, INTERNAL_API_BASE_URL — optional in dev
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost}
+      INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://api:8000}
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-Yakima Real Estate Hub}
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks: [yakimaweb-net]
+
+  # ─── Django REST API (was `web`) ─────────────────────────────────────────
+  api:
+    build: .
+    restart: unless-stopped
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 3
+      --access-logfile -
+    expose:
+      - "8000"                # not published — Caddy fronts /api, /admin, etc.
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DATABASE_URL: postgres://yakimaweb:yakimaweb@db:5432/yakimaweb
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,api,frontend,caddy"
+      CORS_ALLOWED_ORIGINS: "http://localhost,http://localhost:3000"
+      DJANGO_CSRF_TRUSTED_ORIGINS: "http://localhost,http://localhost:3000"
+      ADMIN_IP_ALLOWLIST: "${ADMIN_IP_ALLOWLIST:-127.0.0.1,::1}"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks: [yakimaweb-net]
+
+  # ─── One-shot migrate (profile: migrate) ─────────────────────────────────
+  # Run with: docker compose --profile migrate run --rm migrate
+  migrate:
+    build: .
+    profiles: ["migrate"]
+    command: python manage.py migrate --noinput
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DATABASE_URL: postgres://yakimaweb:yakimaweb@db:5432/yakimaweb
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [yakimaweb-net]
+
+  # ─── Postgres 16 ─────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: yakimaweb
       POSTGRES_USER: yakimaweb
       POSTGRES_PASSWORD: yakimaweb
     ports:
+      # Dev only — published so host psql/pgAdmin can connect.
+      # Production overlay (compose.prod.yml) drops this.
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yakimaweb"]
+      test: ["CMD-SHELL", "pg_isready -U yakimaweb -d yakimaweb"]
       interval: 5s
       timeout: 5s
       retries: 10
+    networks: [yakimaweb-net]
 
+  # ─── Redis 7 (cache + broker + sessions) ─────────────────────────────────
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
+    expose:
+      - "6379"
     volumes:
       - redisdata:/data
     healthcheck:
@@ -26,33 +157,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks: [yakimaweb-net]
 
-  web:
-    build: .
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.dev
-      DATABASE_URL: postgres://yakimaweb:yakimaweb@db:5432/yakimaweb
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/1
-      CELERY_RESULT_BACKEND: redis://redis:6379/2
-      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,web"
-      ADMIN_IP_ALLOWLIST: ""
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
+  # ─── Celery general worker (default queue) ───────────────────────────────
   celery:
     build: .
-    command: celery -A config worker --loglevel=info --concurrency=2
+    restart: unless-stopped
+    command: celery -A config worker --loglevel=info --concurrency=2 -n celery@%h
     env_file:
       - .env
     environment:
@@ -66,9 +177,18 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks: [yakimaweb-net]
 
+  # ─── Celery beat scheduler ───────────────────────────────────────────────
   beat:
     build: .
+    restart: unless-stopped
     command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     env_file:
       - .env
@@ -79,11 +199,47 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
     depends_on:
-      web:
-        condition: service_started
+      api:
+        condition: service_healthy
       redis:
         condition: service_healthy
+    networks: [yakimaweb-net]
+
+  # ─── Dedicated img-worker (Pillow-heavy tasks on `images` queue) ─────────
+  # Reuses root Dockerfile — same Django app code, different queue + name.
+  # Routing map: apps/core/celery_routes.py.
+  # Tag tasks with `@shared_task(queue="images")` to land here.
+  img-worker:
+    build: .
+    restart: unless-stopped
+    command: celery -A config worker --loglevel=info --concurrency=2 -Q images -n img-worker@%h
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DATABASE_URL: postgres://yakimaweb:yakimaweb@db:5432/yakimaweb
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d img-worker@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks: [yakimaweb-net]
 
 volumes:
   pgdata:
   redisdata:
+  caddydata:
+  caddyconfig:
+
+networks:
+  yakimaweb-net:
+    driver: bridge

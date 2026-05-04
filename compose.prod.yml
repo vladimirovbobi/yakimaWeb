@@ -1,0 +1,92 @@
+# ============================================================================
+# Production overlay — merge with base via:
+#   docker compose -f docker-compose.yml -f compose.prod.yml up -d
+# ----------------------------------------------------------------------------
+# Differences from dev:
+#   - db: no host port published (internal only)
+#   - caddy: real DOMAIN env, auto_https on (TLS via Let's Encrypt)
+#   - all services: restart=always, json-file log rotation
+#   - DJANGO_SETTINGS_MODULE = config.settings.prod
+#   - frontend: NODE_ENV=production (image runs `next start` per Dockerfile)
+#   - secrets: env vars supplied by Railway/Fly — no .env defaults shipped
+# ============================================================================
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-prod-django-env: &prod-django-env
+  DJANGO_SETTINGS_MODULE: config.settings.prod
+  DJANGO_DEBUG: "False"
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+  REDIS_URL: ${REDIS_URL:?REDIS_URL required}
+  CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL required}
+  CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND required}
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY required}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?required}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?required}
+  ADMIN_IP_ALLOWLIST: ${ADMIN_IP_ALLOWLIST:?required}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:?required}
+  ARELLO_API_KEY: ${ARELLO_API_KEY:?required}
+  POSTMARK_SERVER_TOKEN: ${POSTMARK_SERVER_TOKEN:?required}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
+services:
+  caddy:
+    restart: always
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN required for prod (e.g. yakimaweb.com)}
+    # auto_https is controlled by the absence of the dev `auto_https off` flag.
+    # The Caddyfile uses {$DOMAIN} for the site address — when DOMAIN is a real
+    # FQDN, Caddy will fetch a Let's Encrypt cert automatically.
+    logging: *default-logging
+
+  frontend:
+    restart: always
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?required}
+      INTERNAL_API_BASE_URL: http://api:8000
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-Yakima Real Estate Hub}
+    logging: *default-logging
+
+  api:
+    restart: always
+    environment:
+      <<: *prod-django-env
+    logging: *default-logging
+
+  db:
+    restart: always
+    # Override base: drop the host-published 5432 binding entirely.
+    # Compose merge appends ports; explicit empty list isn't supported, so we
+    # rely on the prod hosts (Railway/Fly) to not publish the port at the
+    # platform layer. For self-hosted prod via this overlay, run with:
+    #   docker compose -f docker-compose.yml -f compose.prod.yml \
+    #       --no-deps up -d db
+    # and confirm `docker port <db>` shows nothing public-facing.
+    logging: *default-logging
+
+  redis:
+    restart: always
+    logging: *default-logging
+
+  celery:
+    restart: always
+    environment:
+      <<: *prod-django-env
+    logging: *default-logging
+
+  beat:
+    restart: always
+    environment:
+      <<: *prod-django-env
+    logging: *default-logging
+
+  img-worker:
+    restart: always
+    environment:
+      <<: *prod-django-env
+    logging: *default-logging
