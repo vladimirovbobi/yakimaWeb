@@ -54,6 +54,13 @@ THIRD_PARTY_APPS = [
     "django_otp.plugins.otp_static",
     # Throttling
     "axes",
+    # DRF stack (Sprint 0c split architecture per ADR-0005)
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",
+    "drf_spectacular",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
@@ -75,6 +82,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -244,6 +252,114 @@ SITE_DESCRIPTION = (
     "Verified Washington realtors, trusted local service providers, and a real "
     "community for buying and selling in Yakima and Central Washington."
 )
+
+# ─── DRF (Sprint 0c — split architecture per ADR-0005) ──────────────────
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "apps.core.api.authentication.JWTCookieAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/minute",
+        "user": "300/minute",
+        "vote": "30/minute",
+        "lead": "5/hour",
+        "ai_tool": "10/hour",
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "apps.core.api.exceptions.problem_detail_handler",
+}
+
+# SimpleJWT — tokens delivered via httpOnly cookies (ADR-0008)
+from datetime import timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+JWT_AUTH_COOKIE = "yw_access"
+JWT_AUTH_REFRESH_COOKIE = "yw_refresh"
+JWT_AUTH_COOKIE_PATH = "/"
+JWT_AUTH_REFRESH_COOKIE_PATH = "/api/v1/auth/refresh/"
+JWT_AUTH_COOKIE_SAMESITE = "Strict"
+JWT_AUTH_COOKIE_SECURE = not DEBUG
+JWT_AUTH_COOKIE_HTTPONLY = True
+
+# drf-spectacular — auto-generated OpenAPI 3.1
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Yakima Real Estate Hub API",
+    "DESCRIPTION": "Internal REST API powering the Yakima Real Estate Hub platform.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": r"/api/(public/)?v[0-9]+",
+    "SERVE_AUTHENTICATION": (
+        "apps.core.api.authentication.JWTCookieAuthentication",
+    ),
+    "SERVERS": [{"url": "http://localhost:8000", "description": "Local"}],
+}
+
+# CORS — strict allowlist for the Next.js frontend
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://localhost:3000", "http://localhost"],
+)
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = (
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-request-id",
+    "idempotency-key",
+)
+
+# CSRF cooperates with the cookie-JWT pattern via double-submit
+CSRF_COOKIE_NAME = "yw_csrf"
+CSRF_COOKIE_HTTPONLY = False  # double-submit requires JS read of the cookie
+CSRF_COOKIE_SAMESITE = "Strict"
+CSRF_COOKIE_SECURE = not DEBUG
+
+# Content Security Policy (django-csp)
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'strict-dynamic'")
+CSP_STYLE_SRC = ("'self'",)
+CSP_IMG_SRC = ("'self'", "data:", "https:")
+CSP_FONT_SRC = ("'self'", "data:")
+CSP_CONNECT_SRC = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)
+CSP_BASE_URI = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+CSP_INCLUDE_NONCE_IN = ("script-src", "style-src")
+CSP_OBJECT_SRC = ("'none'",)
 
 # ─── Logging ─────────────────────────────────────────────────────────────
 LOGGING = {
