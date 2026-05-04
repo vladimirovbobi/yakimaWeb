@@ -23,11 +23,39 @@ function generateNonce() {
   return btoa(String.fromCharCode(...array));
 }
 
+// Pre-launch gate: if NEXT_PUBLIC_LAUNCH_GATE is "true", redirect every public
+// route to /coming-soon. Auth + admin + the coming-soon page itself are
+// always reachable so we can flip the gate without locking ourselves out.
+const LAUNCH_GATE_ALLOW = [
+  "/coming-soon",
+  "/login",
+  "/signup",
+  "/admin",
+  "/dashboard",
+  "/2fa",
+  "/api",
+  "/_next",
+];
+
+function isLaunchGateOpen(pathname: string) {
+  return LAUNCH_GATE_ALLOW.some((p) => pathname.startsWith(p));
+}
+
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   const access = req.cookies.get("yw_access")?.value;
   const nonce = generateNonce();
+
+  if (
+    process.env.NEXT_PUBLIC_LAUNCH_GATE === "true" &&
+    !isLaunchGateOpen(pathname)
+  ) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/coming-soon";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
 
   if (isProtected(pathname) && !access) {
     const url = req.nextUrl.clone();
