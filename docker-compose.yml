@@ -148,8 +148,9 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    expose:
-      - "6379"
+    # Publish to host for local dev (matches db). Prod overlay drops this.
+    ports:
+      - "6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:
