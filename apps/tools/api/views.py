@@ -13,7 +13,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.api.throttling import AIToolThrottle
+from apps.core.api.throttling import AIToolThrottle, ImageCompressorThrottle
 
 from ..models import Tool, ToolUsage, UsageStatus
 from ..services.rate_limit import check_and_consume
@@ -242,7 +242,7 @@ class ImageCompressorRunView(generics.GenericAPIView):
 
     serializer_class = ImageCompressorRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
-    throttle_classes = [AIToolThrottle]
+    throttle_classes = [ImageCompressorThrottle]
     parser_classes = None
 
     def post(self, request, *args, **kwargs):

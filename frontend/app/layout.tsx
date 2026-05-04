@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Cormorant_Garamond, Raleway } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
@@ -87,11 +88,12 @@ export const metadata: Metadata = {
   category: "real estate",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = (await headers()).get("x-csp-nonce") || undefined;
   return (
     <html
       lang="en"
@@ -101,6 +103,7 @@ export default function RootLayout({
       <head>
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={jsonLDScript([organizationLD(), websiteLD()])}
         />
       </head>

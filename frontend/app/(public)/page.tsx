@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Container from "@/components/layout/Container";
 import Hero from "@/components/marketing/Hero";
 import ScrollReveal from "@/components/reveal/ScrollReveal";
@@ -119,11 +120,13 @@ export default async function HomePage() {
   const posts = allPosts.slice(1);
   const threads = (threadsResp?.results || []).map(toFeedThread);
   const voices = (realtorsResp?.results || []).map(toFeedVoice);
+  const nonce = (await headers()).get("x-csp-nonce") || undefined;
 
   return (
     <>
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={jsonLDScript(
           breadcrumbLD([{ name: "Home", path: "/" }]),
         )}

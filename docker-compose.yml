@@ -235,11 +235,46 @@ services:
       start_period: 30s
     networks: [yakimaweb-net]
 
+  # ─── Delivery service (Sprint 6 — vendor → buyer asset delivery) ─────────
+  delivery:
+    build: ./delivery
+    restart: unless-stopped
+    expose:
+      - "8001"
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      ENVIRONMENT: dev
+      DATABASE_URL: postgresql+asyncpg://yakimaweb:yakimaweb@db:5432/yakimaweb
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
+      DELIVERY_WEBHOOK_SECRET: ${DELIVERY_WEBHOOK_SECRET:-dev-webhook-secret}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:-}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_DELIVERY_BUCKET:-yakimaweb-deliveries}
+      DJANGO_WEBHOOK_URL: http://api:8000/api/v1/delivery/webhooks/finalize/
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8001/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - delivery_dev_uploads:/app/dev_uploads
+    networks: [yakimaweb-net]
+
 volumes:
   pgdata:
   redisdata:
   caddydata:
   caddyconfig:
+  delivery_dev_uploads:
 
 networks:
   yakimaweb-net:

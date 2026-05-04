@@ -2,17 +2,19 @@
 # Yakima Real Estate Hub — Caddyfile (dev + prod via $DOMAIN env)
 # ----------------------------------------------------------------------------
 # Routes:
-#   /api/*, /admin/*, /accounts/*, /sitemap.xml, /robots.txt, /healthz, /static/*
-#       → api:8000 (Django REST + Django admin + static)
-#   everything else → frontend:3000 (Next.js 15)
+#   /api/*, /admin/*, /accounts/*, /healthz, /static/*  → api:8000 (Django)
+#   /sitemap.xml, /robots.txt                          → frontend:3000
+#                                                          (Next.js native
+#                                                           sitemap.ts + robots.ts)
+#   /api/delivery/*                                    → delivery:8001 (Sprint 6)
+#   everything else                                    → frontend:3000 (Next.js)
 #
-# Edge rate-limit: 60 req/min per IP for unauthenticated requests
-#   (sessioned users carry yw_access cookie and bypass — backend DRF throttle
-#   takes over for them).
+# Edge rate-limit:
+#   default: 60 req/min per IP for unauthenticated requests
+#   auth:    10 req/min per IP on /api/v1/auth/* (credential-stuffing defense)
+#   tools:   30 req/min per IP on /api/v1/tools/* (AI cost defense)
 #
 # Requires: caddy-ratelimit module (added via xcaddy in caddy/Dockerfile).
-# If you swap back to plain caddy:2-alpine, comment the rate_limit block —
-# DRF backend throttling alone is the v1 fallback.
 # ============================================================================
 
 {
@@ -30,14 +32,40 @@
         respond "404" 404
     }
 
-    # Edge security headers (defense-in-depth; Django + Next.js add their own).
+    # Edge security headers (defense-in-depth; Next.js middleware also sets CSP
+    # with a per-request nonce on HTML responses).
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Frame-Options DENY
         X-Content-Type-Options nosniff
         Referrer-Policy strict-origin-when-cross-origin
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Resource-Policy "same-origin"
+        X-Permitted-Cross-Domain-Policies "none"
+        # Don't advertise server tech to attackers.
         -Server
+        -X-Powered-By
+    }
+
+    # Tighter rate limit on auth endpoints — credential stuffing defense.
+    @auth_burst path /api/v1/auth/login* /api/v1/auth/refresh* /api/v1/auth/password-reset*
+    rate_limit @auth_burst {
+        zone auth {
+            key {remote_host}
+            events 10
+            window 1m
+        }
+    }
+
+    # Tighter rate limit on AI tool endpoints — cost defense.
+    @tools path /api/v1/tools/*
+    rate_limit @tools {
+        zone tools {
+            key {remote_host}
+            events 30
+            window 1m
+        }
     }
 
     # Edge rate limit — anonymous traffic only (60 rpm per IP).
@@ -52,8 +80,21 @@
         }
     }
 
-    # API + Django admin + auth + sitemaps + healthz + static → Django.
-    @api path /api/* /admin/* /accounts/* /sitemap.xml /robots.txt /healthz /static/*
+    # Delivery service (Sprint 6) — vendor → buyer asset delivery.
+    @delivery path /api/delivery/*
+    handle @delivery {
+        reverse_proxy delivery:8001 {
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # API + Django admin + auth + healthz + static → Django.
+    # NOTE: /sitemap.xml and /robots.txt deliberately routed to the frontend
+    # so Next.js's native sitemap.ts + robots.ts handlers serve them
+    # (dynamic, fetched from the API, ISR-cached).
+    @api path /api/* /admin/* /accounts/* /healthz /static/*
     handle @api {
         reverse_proxy api:8000 {
             header_up X-Forwarded-Proto {scheme}
@@ -62,7 +103,7 @@
         }
     }
 
-    # Everything else → Next.js frontend.
+    # Everything else → Next.js frontend (includes /sitemap.xml + /robots.txt).
     handle {
         reverse_proxy frontend:3000 {
             header_up X-Forwarded-Proto {scheme}

@@ -1,6 +1,72 @@
-# State of the Project — 2026-05-04 (Sprint 1 + 1.5 landed)
+# State of the Project — 2026-05-04 (Sprints 1 → 11 complete or prepped)
 
 > Honest read on where we are, what works, and what's left before public launch.
+
+## Master plan — final status (2026-05-04)
+
+| Sprint | Title | Status | Detail |
+|---|---|---|---|
+| 1 | Welcoming homepage + SEO + extended seed | ✅ done | commit `bb107ab` |
+| 1.5 | Lossless image compressor + featured services | ✅ done | commit `84f39f7` |
+| 2 | Production polish — CSP/headers/rate-limits/mobile | ✅ done | this commit chain |
+| 3 | Furniture remover real impl | ✅ done (audit-pass) | already shipped pre-session |
+| 4 | Vendor onboarding + lead messaging | ✅ done (audit-pass) | already shipped pre-session |
+| 5 | Mod console v2 + content polish | ✅ done (audit-pass) | already shipped pre-session |
+| 6 | Content/Order Delivery Service | ✅ done | new 9th container |
+| 7 | BFF / network-tab obscuration | ✅ done | new layer + 15 manifest entries |
+| 8 | Obsidian vault + RFP + doc completion | ✅ done | dev-facing knowledge base |
+| 9 | E2E specs + final security review | ✅ done | 7 new specs, 45 total |
+| 10 | Beta launch | 📋 prep complete | real launch out-of-scope (founder ops) |
+| 11 | Public launch | 📋 prep complete | real launch out-of-scope (attorney + press) |
+
+The Obsidian vault at `docs/obsidian-vault/` is the navigable index — open in
+Obsidian, the wikilinks resolve. Each sprint has its own retro note in
+`Sprints/`, and each touches at least one entry in `Security/`.
+
+## Sprint 2 — Production polish (2026-05-04)
+
+- **CSP enforcement.** Next.js middleware emits per-request nonce + enforced `Content-Security-Policy` header. Inline JSON-LD `<script>` blocks in root layout, homepage, and blog post detail thread the nonce. `script-src 'self' 'nonce-{N}' 'strict-dynamic'`. Style-src still has `'unsafe-inline'` (Next.js 15 hydration); tracked Sprint 9 hardening, not launch-blocking.
+- **Edge security headers.** Caddyfile expanded: COOP `same-origin`, CORP `same-origin`, X-Permitted-Cross-Domain-Policies `none`, Permissions-Policy with `payment=()`, `usb=()`, `interest-cohort=()`. Strips `Server` and `X-Powered-By`. HSTS preload retained.
+- **Rate limits split per purpose.** `/api/v1/auth/*` 10rpm/IP, `/api/v1/tools/*` 30rpm/IP, default 60rpm anon.
+- **DRF throttle scopes added.** `image_compressor: 60/min`, `featured_anon: 120/min`.
+- **Sitemap routing fix.** `/sitemap.xml` and `/robots.txt` route to Next.js (was Django).
+
+## Sprint 6 — Content/Order Delivery Service (2026-05-04)
+
+- New 9th container `delivery/` — FastAPI on port 8001.
+- 6 endpoints: create package / upload file / finalize / manifest / signed download / access log.
+- Magic-byte content sniff + per-class size caps + JWT verify against Django SECRET_KEY.
+- HMAC-signed webhook back to Django flips `Lead.status` to WON.
+- ADR-0010 logged.
+
+## Sprint 7 — BFF / Network-Tab Obscuration (2026-05-04)
+
+- `frontend/app/api/bff/[id]/route.ts` proxies opaque IDs to real Django paths.
+- 15-entry manifest in `frontend/lib/bff/routes.ts` covering marketplace, forum, comments, AI tools, profile.
+- Same-origin enforced; method-bound; auth-required cookie check; header allow-list.
+- ADR-0011 logged.
+
+## Sprint 8 — Obsidian vault + RFP + docs (2026-05-04)
+
+- `docs/obsidian-vault/` with full Architecture / Decisions / Sprints / Security / Vendors / People / Lessons / Templates structure.
+- `docs/RFP.md` — vendor-facing scope document, 10 sections.
+
+## Sprint 9 — E2E specs + final security review (2026-05-04)
+
+- 7 new Playwright specs (45 total): csp-enforcement, seo-sitemap, image-compressor-flow, featured-services, bff-obscuration, security-headers-sprint2, delivery-service.
+- `docs/SECURITY-FINAL.md` updated with Sprint 2 closures.
+- Sprint 6 + 7 audits in `docs/obsidian-vault/Security/`.
+
+## Verification gates run this session (Sprints 2-9)
+
+- ✅ Frontend `tsc --noEmit`: 0 errors
+- ✅ Frontend `next lint`: 0 errors
+- ✅ Backend `ruff check` on Sprint 2-9 files: All checks passed
+- ✅ Django `manage.py check`: clean (pre-existing allauth deprecation warnings only)
+- ⚠ pytest + Playwright + Lighthouse + axe + k6: deferred — needs Docker stack running.
+- ⚠ Browser walkthrough via Claude Chrome: tooling not bound to this project session.
+
+---
 
 ## Sprint 1.5 — Lossless Image Compressor + Featured Services (2026-05-04)
 

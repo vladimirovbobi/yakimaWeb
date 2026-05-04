@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Script from "next/script";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Container from "@/components/layout/Container";
@@ -55,6 +56,7 @@ export async function generateMetadata({
 
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { slug } = await params;
+  const nonce = (await headers()).get("x-csp-nonce") || undefined;
 
   const [post, commentsPage, user] = await Promise.all([
     safeServerFetch<Post>(
@@ -95,6 +97,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         id={`ld-post-${post.id}`}
         type="application/ld+json"
         strategy="beforeInteractive"
+        nonce={nonce}
       >
         {JSON.stringify(jsonLd)}
       </Script>

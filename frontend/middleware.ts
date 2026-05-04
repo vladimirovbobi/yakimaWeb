@@ -83,6 +83,40 @@ export function middleware(req: NextRequest) {
 
   const res = NextResponse.next({ request: { headers: reqHeaders } });
   res.headers.set("x-csp-nonce", nonce);
+
+  // Content-Security-Policy with per-request nonce.
+  // - script-src: 'self' + nonce. 'strict-dynamic' allows nonced scripts to
+  //   load further scripts (Next.js needs this).
+  // - style-src includes 'unsafe-inline' because Next.js 15 still ships some
+  //   inline style attributes for hydration; tightening this requires
+  //   migrating every styled component to nonce-aware. Sprint 2 polish leaves
+  //   style-src at unsafe-inline; track in Sprint 9 hardening.
+  // - frame-ancestors 'none' is the modern X-Frame-Options.
+  // - report-uri / report-to deferred to Sentry CSP integration in prod.
+  const isDev = process.env.NODE_ENV !== "production";
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${isDev ? "'unsafe-eval'" : ""}`.trim(),
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "connect-src 'self' https://*.cloudflarestorage.com https://*.r2.dev",
+    "media-src 'self' blob:",
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://my.matterport.com",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+  res.headers.set("Content-Security-Policy", csp);
+
+  // Defense-in-depth headers in case Caddy is bypassed (direct frontend access in dev).
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()");
+
   return res;
 }
 

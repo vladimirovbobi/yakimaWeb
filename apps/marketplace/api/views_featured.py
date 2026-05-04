@@ -5,6 +5,8 @@ from rest_framework import permissions, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.api.throttling import FeaturedAnonThrottle
+
 from ..services.featured import pick_for_context
 
 
@@ -77,6 +79,7 @@ class FeaturedServicesView(APIView):
 
     permission_classes = [permissions.AllowAny]
     authentication_classes: list = []
+    throttle_classes = [FeaturedAnonThrottle]
 
     def get(self, request, *args, **kwargs):
         context_kind = (request.query_params.get("context") or "blog").strip()[:64]

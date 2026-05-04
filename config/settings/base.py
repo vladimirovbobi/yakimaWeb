@@ -78,6 +78,7 @@ LOCAL_APPS = [
     "apps.marketplace",
     "apps.notifications",
     "apps.operations",
+    "apps.delivery",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -195,6 +196,10 @@ SERVER_EMAIL = env("SERVER_EMAIL", default="ops@yakimaweb.com")
 POSTMARK_SERVER_TOKEN = env("POSTMARK_SERVER_TOKEN", default="")
 ANYMAIL = {"POSTMARK_SERVER_TOKEN": POSTMARK_SERVER_TOKEN}
 
+# Delivery service webhook (Sprint 6) — HMAC-signed callback from the
+# FastAPI delivery container. When empty, dev mode accepts unsigned webhooks.
+DELIVERY_WEBHOOK_SECRET = env("DELIVERY_WEBHOOK_SECRET", default="")
+
 # Graceful dev fallback — no Postmark token means console backend.
 # In prod.py we raise if POSTMARK_SERVER_TOKEN is missing.
 if not POSTMARK_SERVER_TOKEN:
@@ -292,11 +297,13 @@ REST_FRAMEWORK = {
         "vote": "30/minute",
         "lead": "5/hour",
         "ai_tool": "10/hour",
+        "image_compressor": "60/minute",  # Local CPU; users batch listing photos
         "comment": "30/hour",
         "forum_write": "30/hour",
         "flag": "20/hour",
         "message": "10/minute",
         "upload": "10/hour",
+        "featured_anon": "120/minute",    # Public, cached, but still capped
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.core.api.exceptions.problem_detail_handler",

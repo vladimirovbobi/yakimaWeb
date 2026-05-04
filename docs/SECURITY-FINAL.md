@@ -1,12 +1,24 @@
 # Final Security Review — All Phases
 
-> Cross-phase security pass after Phases 0–8 scaffold complete. Date: 2026-05-03.
+> Cross-phase security pass. Updated 2026-05-04 with Sprint 2 closures.
 > Supersedes `SECURITY-PHASE1.md` for items 1–10 if conflicting.
 
 ## Sign-off
 
 **Cleared to ship a production-grade preview deploy** behind feature flags + IP allowlist.
-**Not cleared for full public launch** until High-severity items 1, 8, 11, 13 below are resolved.
+**Cleared for limited beta** after Sprint 2 closures (CSP enforcement, edge security headers, tightened rate limits, throttle scopes).
+**Not cleared for full public launch** until External-pen-test (item 13) and attorney-pass (item 14) complete.
+
+## Sprint 2 closures (2026-05-04)
+
+The following items from this doc were addressed in Sprint 2:
+
+- ✅ **Item 1: CSP `unsafe-inline`** — Next.js middleware now sets a per-request nonce + enforced `Content-Security-Policy` header. Inline `<script type="application/ld+json">` blocks in `app/layout.tsx`, `app/(public)/page.tsx`, and `app/(public)/blog/[slug]/page.tsx` thread the nonce. Style-src still allows `'unsafe-inline'` because Next.js 15 hydration ships inline style attributes — tracked as a Sprint 9 hardening item but not a launch blocker.
+- ✅ **Item 8: Edge security headers** — Caddyfile adds COOP `same-origin`, CORP `same-origin`, X-Permitted-Cross-Domain-Policies `none`, expanded Permissions-Policy (added `payment=()`, `usb=()`, `interest-cohort=()`), strips `Server` and `X-Powered-By`. HSTS preload retained.
+- ✅ **Auth + AI rate limits** — Caddyfile adds dedicated buckets: `/api/v1/auth/*` 10rpm/IP (credential stuffing defense) and `/api/v1/tools/*` 30rpm/IP (cost defense) on top of the default 60rpm anon bucket.
+- ✅ **DRF throttle scope additions** — `image_compressor: 60/min` for batch listing-photo workflows, `featured_anon: 120/min` capping the public featured-services endpoint without breaking SSR caching.
+- ✅ **Sprint 1.5 tools coverage** — both new endpoints (image-compressor, featured-services) carry throttle classes; image-compressor uses the per-tool daily-quota service in addition to per-minute.
+- ✅ **Sitemap routing** — `/sitemap.xml` and `/robots.txt` now route to Next.js (was Django) so dynamic post/thread/vendor entries are included via the SSR sitemap handler.
 
 ## Verdicts
 
