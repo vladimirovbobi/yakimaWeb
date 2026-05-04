@@ -77,6 +77,68 @@
   }
 }
 
+@layer components {
+  .post-body h2 {
+    @apply font-serif text-ivory text-3xl md:text-4xl font-light leading-tight mt-12 mb-4;
+  }
+  .post-body h3 {
+    @apply font-serif text-ivory text-2xl md:text-3xl font-light leading-tight mt-10 mb-3;
+  }
+  .post-body p {
+    @apply text-ivory leading-[1.85];
+  }
+  .post-body a {
+    @apply text-gold underline underline-offset-4 hover:text-gold-hi;
+  }
+  .post-body ul {
+    @apply list-disc pl-6 space-y-2;
+  }
+  .post-body ol {
+    @apply list-decimal pl-6 space-y-2;
+  }
+  .post-body blockquote {
+    @apply border-l-2 border-gold/40 pl-6 italic text-mist my-8;
+  }
+  .post-body img {
+    @apply w-full my-8 border border-gold/14;
+  }
+  .post-body code {
+    @apply bg-warm text-gold-hi px-1.5 py-0.5 text-sm font-mono;
+  }
+  .post-body pre {
+    @apply bg-warm border border-gold/14 p-4 overflow-x-auto my-6;
+  }
+  .post-body hr {
+    @apply border-gold/14 my-12;
+  }
+
+  .prose-comment p {
+    @apply mb-2 last:mb-0;
+  }
+  .prose-comment a {
+    @apply text-gold underline underline-offset-4 hover:text-gold-hi;
+  }
+
+  .prose-page h2 {
+    @apply font-serif text-ivory text-2xl md:text-3xl font-light leading-tight mt-10 mb-4;
+  }
+  .prose-page h3 {
+    @apply font-serif text-ivory text-xl md:text-2xl font-light leading-tight mt-8 mb-3;
+  }
+  .prose-page p {
+    @apply text-ivory leading-[1.85] mb-5;
+  }
+  .prose-page ul {
+    @apply list-disc pl-6 space-y-2 mb-5 text-ivory;
+  }
+  .prose-page ol {
+    @apply list-decimal pl-6 space-y-2 mb-5 text-ivory;
+  }
+  .prose-page a {
+    @apply text-gold underline underline-offset-4 hover:text-gold-hi;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/account", "/realtor", "/operator"];
-const AUTH_PAGES = ["/login", "/signup", "/verify-email"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/account",
+  "/realtor",
+  "/operator",
+  "/2fa",
+];
+const AUTH_PAGES = ["/login", "/signup"];
 
 function isProtected(pathname: string) {
   return PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
