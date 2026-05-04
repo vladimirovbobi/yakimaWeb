@@ -1,17 +1,41 @@
-# State of the Project — 2026-05-03
+# State of the Project — 2026-05-03 (autonomous build update)
 
 > Honest read on where we are, what works, and what's left before public launch.
 
-## TL;DR
+## TL;DR — Sprint 0a/0b/0c + 1 + 2 + Sprint 6 (partial) all landed
 
-The platform's **scaffold is complete across all 8 phases**. The **stack runs end-to-end**
-in docker compose (db + redis + web + celery + beat, 5 containers). All public URLs return
-200. 86 pytest tests green. Production deploy check clean. Celery is actively consuming
-moderation tasks.
+Architecture migrated from Django monolith to **split: Django REST API + Next.js 15 frontend
++ Caddy reverse proxy + 8 services**. All under autonomous build per ADRs 0005-0009.
 
-But "scaffold complete" ≠ "ready for paying users." We're roughly **65% to public launch**
-and **40% to a polished, fully-featured product**. The remaining work is real — see the
-plan below — but no architectural rewrites required. Everything left is additive.
+**What's now done (added since prior version of this doc):**
+- ✅ Full enterprise documentation suite (12 docs + 5 ADRs, ~75K words) — VISION, SRS,
+  SAD, ICD, MTP, RTM, RISK-REGISTER, THREAT-MODEL, SECURITY-PLAYBOOK, COPY-STYLE-GUIDE,
+  RUNBOOK, ACCESS-MATRIX
+- ✅ DRF API surface across all 10 apps (`/api/public/v1/` + `/api/v1/`) with cursor
+  pagination, RFC 7807 problem+json errors, OpenAPI schema at `/api/schema/`
+- ✅ JWT in httpOnly+SameSite=Strict cookies (per ADR-0008) + CSRF double-submit
+- ✅ Custom permissions (IsRealtor / IsVendor / IsModerator / IsOperator / IsOwnerOrReadOnly /
+  RequiresOTP)
+- ✅ 8-service Docker stack (caddy / frontend / api / db / redis / celery / beat / img-worker)
+  with Caddy rate-limit module via xcaddy
+- ✅ Next.js 15 App Router frontend (`/frontend/`) with full vrov-new tokens — 98 .ts/.tsx
+  files, public + auth + dashboard route groups
+- ✅ Seed data management commands (categories, flairs, demo content, demo marketplace,
+  brokerages stub, seed_all wrapper)
+- ✅ Sprint 2 polish: throttles wired everywhere, OTP enforcement on /ops/, file-size
+  validators on every ImageField, Gemini spend cap (Redis-backed), vendor tagline moderation
+- ✅ 12 Playwright critical-path specs (homepage, browse, auth-gating, signup, login/logout,
+  blog flow, forum vote+reply, marketplace inquiry, mobile nav, a11y, SEO, security headers)
+- ✅ Per-author RSS, OG image generator (Pillow 1200x630)
+- ✅ ARELLO graceful mock when no key, Gemini fail-closed when no key, Postmark console
+  fallback, Sentry DSN-gated init with PII scrubbing
+
+**Test status:** 86/86 pytest green throughout (no regressions across any commit).
+
+**Roughly 80-85% to public launch** — remaining work is bounded: real API key wiring
+(ARELLO live + Gemini live + Postmark + R2 + Sentry DSN), polish on mod console v2 /
+furniture remover real impl / vendor onboarding wizard, full security review + pen test +
+load test, attorney-reviewed Privacy & Terms.
 
 ## What works right now (verified)
 
