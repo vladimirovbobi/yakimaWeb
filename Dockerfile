@@ -9,6 +9,7 @@ RUN npm install --no-audit --no-fund || true
 COPY tailwind.config.js postcss.config.js vite.config.js ./
 COPY static/src ./static/src
 COPY templates ./templates
+COPY apps ./apps
 RUN npm run build
 
 # ─── Stage 2: python runtime ─────────────────────────────────────────────
@@ -23,11 +24,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # uv for fast dep install
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml ./
-RUN uv pip install --system --no-cache .
-
+# Copy source FIRST (because pyproject lists explicit packages we need to exist)
 COPY . .
 COPY --from=frontend /build/static/dist ./static/dist
+
+RUN uv pip install --system --no-cache . --group dev
 
 RUN python manage.py collectstatic --noinput || true
 

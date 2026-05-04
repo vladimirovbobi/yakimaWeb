@@ -30,14 +30,20 @@ services:
   web:
     build: .
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/app
+      sh -c "python manage.py migrate --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DATABASE_URL: postgres://yakimaweb:yakimaweb@db:5432/yakimaweb
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,web"
+      ADMIN_IP_ALLOWLIST: ""
     depends_on:
       db:
         condition: service_healthy
@@ -46,25 +52,37 @@ services:
 
   celery:
     build: .
-    command: celery -A config worker --loglevel=info
-    volumes:
-      - .:/app
+    command: celery -A config worker --loglevel=info --concurrency=2
     env_file:
       - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DATABASE_URL: postgres://yakimaweb:yakimaweb@db:5432/yakimaweb
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   beat:
     build: .
     command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    volumes:
-      - .:/app
     env_file:
       - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DATABASE_URL: postgres://yakimaweb:yakimaweb@db:5432/yakimaweb
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
     depends_on:
-      - db
-      - redis
+      web:
+        condition: service_started
+      redis:
+        condition: service_healthy
 
 volumes:
   pgdata:

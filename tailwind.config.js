@@ -74,6 +74,12 @@ export default {
       maxWidth: {
         "8xl": "88rem",
       },
+      opacity: {
+        14: "0.14",
+        22: "0.22",
+        35: "0.35",
+        85: "0.85",
+      },
     },
   },
   plugins: [

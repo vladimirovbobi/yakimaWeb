@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static vite %}<!doctype html>
 <html lang="en" class="bg-black">
 <head>
   <meta charset="utf-8">
@@ -21,7 +21,7 @@
   <link rel="alternate icon" href="{% static 'img/favicon.ico' %}">
 
   {# ─── Vite-built assets ─── #}
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <link rel="stylesheet" href="{% vite_css 'static/src/js/main.js' %}">
 
   {# JSON-LD per-page #}
   {% block jsonld %}{% endblock %}
@@ -44,7 +44,7 @@
 
   {% include "_components/_footer.html" %}
 
-  <script type="module" src="{% static 'js/main.js' %}"></script>
+  <script type="module" src="{% vite_asset 'static/src/js/main.js' %}"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
