@@ -94,16 +94,20 @@ class TestCommentImageModeration:
             status=PostStatus.PUBLISHED, moderation_status="approved",
             published_at=timezone.now(),
         )
-        with patch("apps.content.signals.moderate_image_task.delay") as mock_delay:
+        with patch(
+            "apps.content.signals.moderate_image_task.apply_async",
+        ) as mock_apply:
             comment = Comment.objects.create(
                 post=post, author=realtor, body="check this out",
                 image=SimpleUploadedFile("a.png", _png_bytes(),
                                           content_type="image/png"),
             )
-            assert mock_delay.called
-            args = mock_delay.call_args.args
-            # (content_type_id, object_id) plus image_attr keyword.
-            assert args[1] == comment.pk
+            assert mock_apply.called
+            kwargs = mock_apply.call_args.kwargs
+            # Routed to dedicated images queue with positional args.
+            assert kwargs.get("queue") == "images"
+            assert kwargs["args"][1] == comment.pk
+            assert kwargs["kwargs"].get("image_attr") == "image"
 
     def test_no_image_no_signal(self, realtor):
         post = Post.objects.create(
@@ -111,9 +115,11 @@ class TestCommentImageModeration:
             status=PostStatus.PUBLISHED, moderation_status="approved",
             published_at=timezone.now(),
         )
-        with patch("apps.content.signals.moderate_image_task.delay") as mock_delay:
+        with patch(
+            "apps.content.signals.moderate_image_task.apply_async",
+        ) as mock_apply:
             Comment.objects.create(post=post, author=realtor, body="no image")
-            assert not mock_delay.called
+            assert not mock_apply.called
 
 
 class TestSanitize:

@@ -25,6 +25,11 @@ def _moderate_comment(sender, instance: Comment, created: bool, **kwargs):  # no
         ct = ContentType.objects.get_for_model(Comment)
         moderate_content.delay(ct.pk, instance.pk, text_attr="body", context="comment")
     # Image moderation — runs whenever the image field is populated.
+    # Routed to the dedicated `images` worker queue.
     if instance.image and instance.image.name:
         ct = ContentType.objects.get_for_model(Comment)
-        moderate_image_task.delay(ct.pk, instance.pk, image_attr="image")
+        moderate_image_task.apply_async(
+            args=[ct.pk, instance.pk],
+            kwargs={"image_attr": "image"},
+            queue="images",
+        )

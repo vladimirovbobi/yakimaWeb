@@ -6,17 +6,21 @@ profile / onboard) + buyer/vendor lead workflow.
 """
 from __future__ import annotations
 
+import json
+import time
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Q
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.accounts.models import VendorProfile
 from apps.core.api.pagination import TimeCursorPagination
@@ -485,6 +489,7 @@ class VendorOnboardStepView(generics.GenericAPIView):
             if not data.get("accept_terms"):
                 raise ValidationError({"accept_terms": "You must accept the terms."})
             now = timezone.now()
+            self._materialize_services(profile)
             profile.submitted_at = now
             self._save_wizard(profile, "publish",
                               {"submitted_at": now.isoformat()},
@@ -495,12 +500,31 @@ class VendorOnboardStepView(generics.GenericAPIView):
             try:
                 from apps.notifications.services import notify
                 notify(
-                    user, "vendor_approved",
+                    user, "vendor_submitted",
                     title="Vendor application submitted",
                     body="Your application is under review. Most vendors are "
                          "approved within 24 hours.",
                     link="/dashboard/vendor",
                 )
+            except Exception:  # noqa: BLE001
+                pass
+            # Notify operators so they can review the submission.
+            try:
+                from django.contrib.auth import get_user_model
+
+                from apps.notifications.services import notify
+
+                _User = get_user_model()
+                ops = _User.objects.filter(
+                    groups__name="operator", is_active=True,
+                ).distinct()
+                for op in ops:
+                    notify(
+                        op, "ops_alert",
+                        title=f"Vendor submitted: {profile.business_name}"[:200],
+                        body=f"Vendor #{profile.pk} submitted for review.",
+                        link=f"/admin/marketplace/vendorprofile/{profile.pk}/change/",
+                    )
             except Exception:  # noqa: BLE001
                 pass
             return Response(
@@ -512,6 +536,74 @@ class VendorOnboardStepView(generics.GenericAPIView):
 
         # Unreachable.
         raise ValidationError({"step": "Unhandled step."})
+
+    @staticmethod
+    def _materialize_services(profile: VendorProfile) -> int:
+        """Create real Service + Package rows from `wizard_state.data.services`.
+
+        Idempotent: services already created (matched by title) are skipped.
+        Returns the number of newly created Service rows.
+        """
+        state_data = (profile.wizard_state or {}).get("data") or {}
+        services_data: list[dict] = list(state_data.get("services") or [])
+        category_slugs: list[str] = list(state_data.get("categories") or [])
+
+        # Default category — first one in the wizard, else fall back to ANY root.
+        default_cat: Category | None = None
+        if category_slugs:
+            default_cat = Category.objects.filter(slug=category_slugs[0]).first()
+        if default_cat is None:
+            default_cat = Category.objects.first()
+        if default_cat is None:
+            return 0  # marketplace not seeded; nothing we can do.
+
+        existing_titles = set(profile.services.values_list("title", flat=True))
+        created = 0
+        for svc in services_data:
+            title = (svc.get("title") or "").strip()
+            if not title or title in existing_titles:
+                continue
+            cat = default_cat
+            cat_slug = (svc.get("category") or "").strip()
+            if cat_slug:
+                cat = Category.objects.filter(slug=cat_slug).first() or default_cat
+            description = (svc.get("description") or "").strip() or "Pending vendor description."
+            response_hours = int(svc.get("response_time_hours") or 24)
+
+            service = Service.objects.create(
+                vendor=profile, category=cat,
+                title=title[:140],
+                description=description[:4000],
+                response_time_hours=max(1, min(response_hours, 24 * 14)),
+                is_active=False,  # ops flips to active on review
+            )
+
+            for pkg in (svc.get("packages") or []):
+                tier = (pkg.get("tier") or "basic").strip().lower()
+                if tier not in {"basic", "standard", "premium"}:
+                    tier = "basic"
+                try:
+                    price_low = Decimal(str(pkg.get("price_low") or "0"))
+                    price_high = Decimal(str(pkg.get("price_high") or price_low))
+                except (InvalidOperation, TypeError):
+                    continue
+                try:
+                    Package.objects.create(
+                        service=service,
+                        tier=tier,
+                        name=(pkg.get("name") or tier.title())[:80],
+                        description=(pkg.get("description") or "")[:600],
+                        price_low=price_low,
+                        price_high=price_high,
+                        delivery_days=int(pkg.get("delivery_days") or 7),
+                        revisions=int(pkg.get("revisions") or 1),
+                        features=list(pkg.get("features") or []),
+                    )
+                except Exception:  # noqa: BLE001 — skip duplicate-tier or bad rows
+                    continue
+
+            created += 1
+        return created
 
     @staticmethod
     def _save_wizard(profile: VendorProfile, step: str, value, *, next_step: str) -> None:
@@ -721,3 +813,77 @@ class ReviewResponseCreateView(generics.GenericAPIView):
         ser.is_valid(raise_exception=True)
         ser.update(review, ser.validated_data)
         return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# SSE — lead message stream
+# ──────────────────────────────────────────────────────────────────────────
+SSE_STREAM_TIMEOUT_SECONDS = 300         # hard close after 5 minutes
+SSE_KEEPALIVE_SECONDS = 30               # ping cadence
+SSE_POLL_SECONDS = 2                     # poll DB every 2s for new rows
+
+
+def _sse_format(event: str, data: dict | str) -> bytes:
+    """Encode a single SSE frame. `data` is JSON-serialized when dict-like."""
+    body = data if isinstance(data, str) else json.dumps(data, default=str)
+    return (f"event: {event}\n" f"data: {body}\n\n").encode("utf-8")
+
+
+class LeadMessageStreamView(APIView):
+    """GET /api/v1/streams/leads/<lead_id>/messages/ — SSE feed of new messages.
+
+    Permission check happens BEFORE we open the stream. After the stream is
+    open, we hold the request open for up to 5 minutes, polling DB every 2s
+    for new LeadMessage rows after `last_seen_id` and emitting a `message`
+    event for each. A `ping` event is emitted every 30s to keep proxies awake.
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, lead_id: int):
+        from ..models import Lead, LeadMessage
+        lead = (Lead.objects
+                .select_related("vendor", "vendor__user", "buyer")
+                .filter(pk=lead_id).first())
+        if lead is None:
+            raise NotFound("Lead not found.")
+        if not (lead.buyer_id == request.user.pk
+                or lead.vendor.user_id == request.user.pk):
+            raise PermissionDenied("Not a party to this lead.")
+
+        try:
+            last_seen_id = int(request.query_params.get("last_id") or 0)
+        except (TypeError, ValueError):
+            last_seen_id = 0
+
+        # Capture the value before the generator starts so we don't keep
+        # the request bound during iteration.
+        lead_pk = lead.pk
+
+        def stream():
+            opened_at = time.monotonic()
+            last_keepalive = opened_at
+            cursor = last_seen_id
+            yield _sse_format("open", {"lead_id": lead_pk, "since_id": cursor})
+            while True:
+                if time.monotonic() - opened_at > SSE_STREAM_TIMEOUT_SECONDS:
+                    yield _sse_format("close", {"reason": "timeout"})
+                    break
+                msgs = list(LeadMessage.objects
+                            .filter(lead_id=lead_pk, pk__gt=cursor)
+                            .order_by("pk")
+                            .values("id", "body", "sender_id", "created_at")[:50])
+                for m in msgs:
+                    yield _sse_format("message", m)
+                    cursor = m["id"]
+                now = time.monotonic()
+                if now - last_keepalive >= SSE_KEEPALIVE_SECONDS:
+                    yield _sse_format("ping", {})
+                    last_keepalive = now
+                time.sleep(SSE_POLL_SECONDS)
+
+        resp = StreamingHttpResponse(stream(), content_type="text/event-stream")
+        resp["Cache-Control"] = "no-cache, no-transform"
+        resp["X-Accel-Buffering"] = "no"
+        resp["Connection"] = "keep-alive"
+        return resp

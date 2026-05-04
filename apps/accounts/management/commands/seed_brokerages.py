@@ -1,15 +1,10 @@
-"""Seed WA brokerages.
+"""Seed WA brokerages — populates the Brokerage table for FE autocomplete."""
+from __future__ import annotations
 
-TODO: There is no `Brokerage` model in apps/accounts/models.py yet. The
-`RealtorProfile.brokerage` field is currently a free-text CharField. When
-a `Brokerage` model is introduced (likely Phase 2 hardening), this command
-will import the starter list below.
-
-Until then, this command exits with a notice. The seed list is preserved
-inline so the data survives until the model lands.
-"""
-from django.apps import apps
 from django.core.management.base import BaseCommand
+from django.utils.text import slugify
+
+from apps.accounts.models import Brokerage
 
 
 BROKERAGES: list[tuple[str, str]] = [
@@ -37,24 +32,16 @@ BROKERAGES: list[tuple[str, str]] = [
 
 
 class Command(BaseCommand):
-    help = "Seed WA brokerages — currently a no-op until Brokerage model lands."
+    help = "Seed WA brokerages."
 
     def handle(self, *args, **opts):
-        try:
-            apps.get_model("accounts", "Brokerage")
-        except LookupError:
-            self.stdout.write(self.style.WARNING(
-                "No `Brokerage` model in apps.accounts. Skipping seed.\n"
-                f"Starter list preserved in this command file ({len(BROKERAGES)} entries)."
-            ))
-            return
-
-        Brokerage = apps.get_model("accounts", "Brokerage")
         created = 0
         existed = 0
         for name, city in BROKERAGES:
+            slug = slugify(name)[:200] or slugify(f"{name}-{city}")[:200]
             _, was_created = Brokerage.objects.get_or_create(
-                name=name, defaults={"city": city},
+                slug=slug,
+                defaults={"name": name, "city": city, "state": "WA"},
             )
             if was_created:
                 created += 1

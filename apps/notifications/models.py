@@ -15,7 +15,9 @@ class NotificationKind(models.TextChoices):
     FORUM_REPLY            = "forum_reply",            _("Reply on your thread")
     MOD_DECISION           = "mod_decision",           _("Moderation decision")
     VENDOR_APPROVED        = "vendor_approved",        _("Vendor approved")
+    VENDOR_SUBMITTED       = "vendor_submitted",       _("Vendor submitted for review")
     LICENSE_EXPIRING_SOON  = "license_expiring_soon",  _("License expiring soon")
+    OPS_ALERT              = "ops_alert",              _("Operator alert")
 
 
 class Notification(TimeStampedModel):

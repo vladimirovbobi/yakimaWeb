@@ -74,6 +74,37 @@ def _target_full_url(target: Any) -> str:
     return ""
 
 
+_AUTHOR_ATTRS = ("author", "user", "owner", "buyer", "sender", "reporter", "vendor")
+_AUTHOR_TUNNEL_ATTRS = ("lead", "thread", "post", "service")
+
+
+def _resolve_author_id(target: Any, *, depth: int = 1) -> int | None:
+    """Walk common ownership attrs to find a User pk. Tunnels one level
+    deeper through `lead`/`thread`/`post`/`service` etc. when needed.
+    """
+    if target is None or depth < 0:
+        return None
+    for attr in _AUTHOR_ATTRS:
+        value = getattr(target, attr, None)
+        if value is None:
+            continue
+        # Profile-style — vendor.user_id resolves the underlying User pk.
+        user_id = getattr(value, "user_id", None)
+        if user_id is not None:
+            return int(user_id)
+        pk = getattr(value, "pk", None) or getattr(value, "id", None)
+        if pk is not None:
+            return int(pk)
+    if depth > 0:
+        for attr in _AUTHOR_TUNNEL_ATTRS:
+            inner = getattr(target, attr, None)
+            if inner is not None:
+                got = _resolve_author_id(inner, depth=depth - 1)
+                if got is not None:
+                    return got
+    return None
+
+
 def _redact_classifier_output(output: dict, *, full: bool) -> dict:
     """Mods see allowed/categories/severity only. Op+ see full payload."""
     if not isinstance(output, dict):
@@ -136,6 +167,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
     target_full_url = serializers.SerializerMethodField()
     reason_flag = serializers.SerializerMethodField()
     classifier_output = serializers.SerializerMethodField()
+    author_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ModerationDecision
@@ -143,6 +175,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "id", "target_type", "target_id",
             "target_excerpt", "target_full_url",
             "reason_flag", "classifier_output", "severity", "created_at",
+            "author_id",
         )
         read_only_fields = fields
 
@@ -166,6 +199,18 @@ class QueueItemSerializer(serializers.ModelSerializer):
     def get_classifier_output(self, obj: ModerationDecision) -> dict:
         # Mods never see free-text rationale here. Always redact.
         return _redact_classifier_output(obj.output, full=False)
+
+    def get_author_id(self, obj: ModerationDecision) -> int | None:
+        """Resolve the user behind the moderated content for the InvestigateDrawer.
+
+        Walks common ownership attrs on the target object. Profile-style attrs
+        (vendor / realtor profile) are unwrapped to their `user_id`. For
+        targets that wrap a Lead (e.g. Review), we tunnel one level deeper.
+        """
+        target = obj.target
+        if target is None:
+            return None
+        return _resolve_author_id(target, depth=2)
 
 
 # ─── Flags ────────────────────────────────────────────────────────────────

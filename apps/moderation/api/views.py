@@ -10,7 +10,9 @@ Safety:
 """
 from __future__ import annotations
 
+import json
 import logging
+import time
 from datetime import timedelta
 from typing import Any
 
@@ -19,6 +21,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -32,6 +35,7 @@ from rest_framework.generics import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.audit.models import AccessLog, ActionLog, Surface
 from apps.core.api.pagination import TimeCursorPagination
@@ -343,9 +347,8 @@ def _mini(items: list, *, kind: str, excerpt_field: str = "body") -> list[dict]:
 class InvestigateUserView(GenericAPIView):
     """GET /api/v1/mod/investigate/<int:user_id>/ — composite user dossier.
 
-    Logs an AccessLog row tagged `surface=mod`. The Surface enum doesn't have
-    an "investigation" kind yet — TODO: add `Surface.INVESTIGATION` so
-    investigations are filterable independently from generic mod views.
+    Logs an AccessLog row tagged `surface=investigation` so investigations are
+    filterable independently from generic mod views.
     """
 
     serializer_class = InvestigateUserResultSerializer
@@ -359,10 +362,10 @@ class InvestigateUserView(GenericAPIView):
         if target.is_superuser and not request.user.is_superuser:
             raise PermissionDenied("Cannot investigate superuser.")
 
-        # Audit the access (TODO: use a dedicated Surface.INVESTIGATION value).
+        # Audit the access — dedicated Surface.INVESTIGATION value.
         try:
             AccessLog.objects.create(
-                actor=request.user, surface=Surface.MOD,
+                actor=request.user, surface=Surface.INVESTIGATION,
                 path=request.path[:500], method=request.method,
                 status_code=200,
                 ip=request.META.get("REMOTE_ADDR"),
@@ -514,3 +517,67 @@ class EscalationListView(ListAPIView):
                 .filter(layer=ModerationLayer.HUMAN, output__escalated=True)
                 .select_related("actor", "target_type")
                 .order_by("-created_at"))
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# SSE — moderation queue stream
+# ──────────────────────────────────────────────────────────────────────────
+SSE_STREAM_TIMEOUT_SECONDS = 300        # hard close after 5 minutes
+SSE_KEEPALIVE_SECONDS = 30              # ping cadence
+SSE_POLL_SECONDS = 3                    # poll DB every 3s
+
+
+def _sse_format(event: str, data: dict | str) -> bytes:
+    body = data if isinstance(data, str) else json.dumps(data, default=str)
+    return (f"event: {event}\n" f"data: {body}\n\n").encode("utf-8")
+
+
+class ModQueueStreamView(APIView):
+    """GET /api/v1/streams/mod-queue/ — SSE feed of newly queued items.
+
+    Emits a `queue_item` event for each new ModerationDecision that lands
+    in QUEUE state after the stream opens. Closes after 5 minutes.
+    """
+
+    permission_classes = (IsModerator,)
+
+    def get(self, request: Request) -> StreamingHttpResponse:
+        try:
+            last_seen_id = int(request.query_params.get("last_id") or 0)
+        except (TypeError, ValueError):
+            last_seen_id = 0
+
+        if last_seen_id <= 0:
+            latest = (ModerationDecision.objects
+                      .filter(action=ModerationAction.QUEUE)
+                      .order_by("-pk")
+                      .values_list("pk", flat=True).first())
+            last_seen_id = int(latest or 0)
+
+        def stream():
+            opened_at = time.monotonic()
+            last_keepalive = opened_at
+            cursor = last_seen_id
+            yield _sse_format("open", {"since_id": cursor})
+            while True:
+                if time.monotonic() - opened_at > SSE_STREAM_TIMEOUT_SECONDS:
+                    yield _sse_format("close", {"reason": "timeout"})
+                    break
+                rows = list(ModerationDecision.objects
+                            .filter(action=ModerationAction.QUEUE, pk__gt=cursor)
+                            .order_by("pk")
+                            .values("id", "severity", "created_at")[:50])
+                for r in rows:
+                    yield _sse_format("queue_item", r)
+                    cursor = r["id"]
+                now = time.monotonic()
+                if now - last_keepalive >= SSE_KEEPALIVE_SECONDS:
+                    yield _sse_format("ping", {})
+                    last_keepalive = now
+                time.sleep(SSE_POLL_SECONDS)
+
+        resp = StreamingHttpResponse(stream(), content_type="text/event-stream")
+        resp["Cache-Control"] = "no-cache, no-transform"
+        resp["X-Accel-Buffering"] = "no"
+        resp["Connection"] = "keep-alive"
+        return resp

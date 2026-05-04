@@ -59,6 +59,27 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
         self.save(update_fields=["last_seen"])
 
 
+class Brokerage(TimeStampedModel):
+    """Real-estate brokerage firm (autocomplete source for RealtorProfile.brokerage)."""
+
+    name           = models.CharField(max_length=200, db_index=True)
+    slug           = models.SlugField(max_length=200, unique=True)
+    city           = models.CharField(max_length=80, blank=True)
+    state          = models.CharField(max_length=2, default="WA")
+    phone          = models.CharField(max_length=20, blank=True)
+    website        = models.URLField(blank=True)
+    license_number = models.CharField(max_length=32, blank=True)
+
+    class Meta:
+        verbose_name = "Brokerage"
+        verbose_name_plural = "Brokerages"
+        ordering = ["name"]
+        indexes = [models.Index(fields=["state", "city", "name"])]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class LicenseType(models.TextChoices):
     BROKER             = "broker",             _("Broker")
     MANAGING_BROKER    = "managing_broker",    _("Managing Broker")

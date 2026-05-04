@@ -296,6 +296,7 @@ REST_FRAMEWORK = {
         "forum_write": "30/hour",
         "flag": "20/hour",
         "message": "10/minute",
+        "upload": "10/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.core.api.exceptions.problem_detail_handler",

@@ -40,9 +40,10 @@ class ActionLog(TimeStampedModel):
 
 
 class Surface(models.TextChoices):
-    ADMIN     = "admin",     _("Django admin")
-    MOD       = "mod",       _("Moderator console")
-    OPERATOR  = "operator",  _("Operator dashboard")
+    ADMIN         = "admin",         _("Django admin")
+    MOD           = "mod",           _("Moderator console")
+    OPERATOR      = "operator",      _("Operator dashboard")
+    INVESTIGATION = "investigation", _("Investigation")
 
 
 class AccessLog(TimeStampedModel):
@@ -50,7 +51,7 @@ class AccessLog(TimeStampedModel):
 
     actor       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                                     null=True, related_name="accesses")
-    surface     = models.CharField(max_length=10, choices=Surface.choices, db_index=True)
+    surface     = models.CharField(max_length=16, choices=Surface.choices, db_index=True)
     path        = models.CharField(max_length=500)
     method      = models.CharField(max_length=10)
     status_code = models.PositiveSmallIntegerField()

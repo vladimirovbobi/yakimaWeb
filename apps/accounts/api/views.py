@@ -362,6 +362,182 @@ class MyToolUsageListView(generics.ListAPIView):
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# /me/activity/
+# ──────────────────────────────────────────────────────────────────────────
+class MyActivityView(APIView):
+    """GET /api/v1/me/activity/?limit=20 — mixed timeline for dashboard home.
+
+    Aggregates the most recent items across the user's surfaces:
+    own posts, comments, forum threads/replies, leads (as buyer or vendor),
+    and tool usage runs. Returns a unified flat list ordered by `at`.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            limit = int(request.query_params.get("limit") or 20)
+        except (TypeError, ValueError):
+            limit = 20
+        limit = max(1, min(limit, 100))
+
+        user = request.user
+        items: list[dict] = []
+        per_kind = max(5, limit)  # pull a buffer so the merge has options
+
+        items.extend(self._posts(user, per_kind))
+        items.extend(self._comments(user, per_kind))
+        items.extend(self._threads(user, per_kind))
+        items.extend(self._replies(user, per_kind))
+        items.extend(self._leads(user, per_kind))
+        items.extend(self._tool_runs(user, per_kind))
+
+        items = [it for it in items if it.get("at") is not None]
+        items.sort(key=lambda it: it["at"], reverse=True)
+        return Response({"results": items[:limit]}, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _posts(user, limit: int) -> list[dict]:
+        try:
+            from apps.content.models import Post
+        except Exception:  # noqa: BLE001
+            return []
+        rows = (Post.objects
+                .filter(author=user)
+                .only("id", "title", "slug", "status",
+                      "published_at", "created_at")
+                .order_by("-created_at")[:limit])
+        out = []
+        for p in rows:
+            out.append({
+                "kind": ("post_published" if p.status == "published"
+                         else "post_drafted"),
+                "title": p.title,
+                "url": f"/blog/{p.slug}/",
+                "at": p.published_at or p.created_at,
+            })
+        return out
+
+    @staticmethod
+    def _comments(user, limit: int) -> list[dict]:
+        try:
+            from apps.content.models import Comment
+        except Exception:  # noqa: BLE001
+            return []
+        rows = (Comment.objects
+                .filter(author=user)
+                .select_related("post")
+                .only("id", "body", "created_at",
+                      "post__slug", "post__title")
+                .order_by("-created_at")[:limit])
+        out = []
+        for c in rows:
+            title = f"Re: {c.post.title}" if c.post_id else "Comment"
+            url = f"/blog/{c.post.slug}/" if c.post_id else "/"
+            out.append({
+                "kind": "comment_made",
+                "title": title[:200],
+                "url": url,
+                "at": c.created_at,
+            })
+        return out
+
+    @staticmethod
+    def _threads(user, limit: int) -> list[dict]:
+        try:
+            from apps.forum.models import ForumThread
+        except Exception:  # noqa: BLE001
+            return []
+        rows = (ForumThread.objects
+                .filter(author=user)
+                .only("id", "title", "slug", "created_at")
+                .order_by("-created_at")[:limit])
+        return [{
+            "kind": "thread_created",
+            "title": t.title,
+            "url": f"/community/{t.slug}/",
+            "at": t.created_at,
+        } for t in rows]
+
+    @staticmethod
+    def _replies(user, limit: int) -> list[dict]:
+        try:
+            from apps.forum.models import ForumReply
+        except Exception:  # noqa: BLE001
+            return []
+        rows = (ForumReply.objects
+                .filter(author=user)
+                .select_related("thread")
+                .only("id", "body", "created_at",
+                      "thread__slug", "thread__title")
+                .order_by("-created_at")[:limit])
+        out = []
+        for r in rows:
+            title = f"Re: {r.thread.title}" if r.thread_id else "Reply"
+            url = f"/community/{r.thread.slug}/" if r.thread_id else "/community/"
+            out.append({
+                "kind": "thread_replied",
+                "title": title[:200],
+                "url": url,
+                "at": r.created_at,
+            })
+        return out
+
+    @staticmethod
+    def _leads(user, limit: int) -> list[dict]:
+        try:
+            from django.db.models import Q
+
+            from apps.marketplace.models import Lead
+        except Exception:  # noqa: BLE001
+            return []
+        cond = Q(buyer=user)
+        vendor_profile = getattr(user, "vendor_profile", None)
+        if vendor_profile is not None:
+            cond |= Q(vendor=vendor_profile)
+        rows = (Lead.objects
+                .filter(cond)
+                .select_related("buyer", "vendor")
+                .only("id", "buyer_id", "vendor_id", "created_at",
+                      "buyer__full_name", "buyer__email", "vendor__business_name")
+                .order_by("-created_at")[:limit])
+        out = []
+        for lead in rows:
+            if lead.buyer_id == user.pk:
+                title = f"to {lead.vendor.business_name}"
+                kind = "lead_sent"
+            else:
+                buyer_label = (lead.buyer.full_name
+                               or lead.buyer.email.split("@")[0])
+                title = f"from {buyer_label}"
+                kind = "lead_received"
+            out.append({
+                "kind": kind,
+                "title": title[:200],
+                "url": f"/dashboard/leads/{lead.pk}/",
+                "at": lead.created_at,
+            })
+        return out
+
+    @staticmethod
+    def _tool_runs(user, limit: int) -> list[dict]:
+        try:
+            rows = (user.tool_runs
+                    .select_related("tool")
+                    .only("id", "status", "created_at",
+                          "tool__slug", "tool__name")
+                    .order_by("-created_at")[:limit])
+        except Exception:  # noqa: BLE001
+            return []
+        return [{
+            "kind": "tool_run",
+            "title": f"{r.tool.name} — {r.status}",
+            "url": f"/tools/{r.tool.slug}/",
+            "at": r.created_at,
+        } for r in rows]
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Realtor verify + edit (private)
 # ──────────────────────────────────────────────────────────────────────────
 class RealtorVerifyView(generics.GenericAPIView):

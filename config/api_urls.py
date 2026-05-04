@@ -35,6 +35,8 @@ private_v1 = [
     path("mod/",       include("apps.moderation.api.urls")),
     path("ops/",       include("apps.operations.api.urls")),
     path("audit/",     include("apps.audit.api.urls")),
+    path("uploads/",   include("apps.core.api.urls_uploads")),
+    path("streams/",   include("apps.core.api.urls_streams")),
 ]
 
 urlpatterns = [
