@@ -23,6 +23,8 @@ from .serializers import (
     DescriptionWriterResponseSerializer,
     FurnitureRemoverRequestSerializer,
     FurnitureRemoverResponseSerializer,
+    ImageCompressorRequestSerializer,
+    ImageCompressorResponseSerializer,
     ToolMetaSerializer,
     ToolTaskStatusSerializer,
 )
@@ -53,6 +55,18 @@ TOOL_META: list[dict[str, Any]] = [
         "requires_auth": True,
         "avg_runtime_seconds": 45,
         "rate_limit_per_hour": 10,
+    },
+    {
+        "tool_id": "image-compressor",
+        "name": "Lossless Image Compressor",
+        "description": (
+            "Shrink listing photos without losing a single pixel of quality. "
+            "Supports JPG, PNG, WebP, HEIC, TIFF, GIF, BMP. Up to 50 MB per file."
+        ),
+        "category": "image",
+        "requires_auth": True,
+        "avg_runtime_seconds": 4,
+        "rate_limit_per_hour": 60,
     },
 ]
 TOOL_META_BY_ID = {t["tool_id"]: t for t in TOOL_META}
@@ -213,6 +227,56 @@ def _safe_storage_url(path: str) -> str | None:
         return default_storage.url(path)
     except Exception:  # noqa: BLE001
         return None
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Image compressor (Sprint 1.5)
+# ──────────────────────────────────────────────────────────────────────────
+class ImageCompressorRunView(generics.GenericAPIView):
+    """POST /api/v1/tools/image-compressor/.
+
+    Stages the upload bytes in default_storage; queues a Celery task that
+    runs Pillow's lossless re-encode. Single-file submission. The frontend
+    loops for batch upload so each file gets its own rate-limit slot.
+    """
+
+    serializer_class = ImageCompressorRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AIToolThrottle]
+    parser_classes = None
+
+    def post(self, request, *args, **kwargs):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        tool = _get_enabled_tool_or_400("image-compressor")
+        _enforce_rate_limit(request.user, tool)
+
+        image = ser.validated_data["image"]
+        ts = timezone.now().strftime("%Y%m%dT%H%M%S")
+        suffix = uuid.uuid4().hex[:8]
+        ext = (image.name.rsplit(".", 1)[-1] or "jpg").lower()
+        upload_path = f"tools/image-compressor/{request.user.id}/uploads/{ts}-{suffix}.{ext}"
+        default_storage.save(upload_path, ContentFile(image.read()))
+
+        usage = ToolUsage.objects.create(
+            user=request.user,
+            tool=tool,
+            input_meta={
+                "filename": image.name,
+                "size": image.size,
+                "upload_path": upload_path,
+            },
+        )
+
+        from apps.tools.tasks import run_image_compressor
+        run_image_compressor.delay(usage.pk)
+
+        body = {"task_id": usage.pk, "status": UsageStatus.QUEUED}
+        return Response(
+            ImageCompressorResponseSerializer(body).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 # ──────────────────────────────────────────────────────────────────────────

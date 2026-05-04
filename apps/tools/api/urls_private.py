@@ -4,6 +4,7 @@ from django.urls import path
 from .views import (
     DescriptionWriterRunView,
     FurnitureRemoverRunView,
+    ImageCompressorRunView,
     ToolTaskStatusView,
     ToolTaskStreamView,
 )
@@ -13,6 +14,8 @@ urlpatterns = [
          name="tools-description"),
     path("furniture-remover/", FurnitureRemoverRunView.as_view(),
          name="tools-furniture-remover"),
+    path("image-compressor/",  ImageCompressorRunView.as_view(),
+         name="tools-image-compressor"),
     path("tasks/<int:task_id>/", ToolTaskStatusView.as_view(),
          name="tools-task-status"),
     path("streams/<int:task_id>/", ToolTaskStreamView.as_view(),

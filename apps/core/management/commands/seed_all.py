@@ -7,6 +7,7 @@ SEEDS = [
     ("seed_flairs",                "Forum flairs"),
     ("seed_brokerages",            "Brokerages"),
     ("seed_action_templates",      "Moderation action templates"),
+    ("seed_tools",                 "AI tool registry"),
     ("seed_demo",                  "Demo content (base)"),
     ("seed_demo_marketplace",      "Demo marketplace (base)"),
     ("seed_demo_extras",           "Extended posts + threads + comments + replies"),

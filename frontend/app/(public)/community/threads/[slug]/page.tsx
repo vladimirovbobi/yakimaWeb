@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import Container from "@/components/layout/Container";
 import VoteButton from "@/components/forum/VoteButton";
 import SignInPrompt from "@/components/auth/SignInPrompt";
+import FeaturedServices from "@/components/marketing/FeaturedServices";
 import { safeServerFetch } from "@/lib/api/server";
 import { getCurrentUser } from "@/lib/auth/server";
 import type { ForumReply, ForumThread, Pagination } from "@/lib/api/types";
@@ -133,6 +134,16 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
             </p>
           </div>
         </article>
+
+        <div className="mt-12 max-w-4xl">
+          <FeaturedServices
+            contextKind={`forum/${thread.flair || "general"}`}
+            seedKey={thread.slug}
+            limit={2}
+            heading="Vendors who handle this kind of work"
+            subheading="Pulled from the marketplace based on this thread."
+          />
+        </div>
 
         <div className="mt-12 max-w-4xl">
           <h2 className="font-serif font-light text-ivory text-2xl mb-6">

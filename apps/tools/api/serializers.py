@@ -80,6 +80,45 @@ class FurnitureRemoverResponseSerializer(serializers.Serializer):
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Image compressor
+# ──────────────────────────────────────────────────────────────────────────
+MAX_COMPRESSOR_INPUT_BYTES = 50 * 1024 * 1024  # 50 MB
+ALLOWED_COMPRESSOR_EXTENSIONS = {
+    "jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "tiff", "tif", "bmp",
+}
+
+
+class ImageCompressorRequestSerializer(serializers.Serializer):
+    """Single-file lossless image compression request.
+
+    Multi-file batches are handled by the frontend looping over single-file
+    submissions — keeps the API simple and the rate limiter accurate per-image.
+    """
+    image = serializers.FileField(use_url=False)
+
+    def validate_image(self, image):
+        if image.size > MAX_COMPRESSOR_INPUT_BYTES:
+            raise serializers.ValidationError(
+                "Image must be 50 MB or smaller.",
+            )
+        name = (image.name or "").lower()
+        ext = name.rsplit(".", 1)[-1] if "." in name else ""
+        if ext not in ALLOWED_COMPRESSOR_EXTENSIONS:
+            raise serializers.ValidationError(
+                f"Format '.{ext}' is not supported. Allowed: jpg, png, webp, gif, heic, tiff, bmp."
+            )
+        return image
+
+
+class ImageCompressorResponseSerializer(serializers.Serializer):
+    task_id = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=(
+        ("queued", "queued"), ("running", "running"),
+        ("done", "done"), ("failed", "failed"),
+    ))
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Task status (polling)
 # ──────────────────────────────────────────────────────────────────────────
 class ToolTaskStatusSerializer(serializers.ModelSerializer):
@@ -113,14 +152,26 @@ class ToolTaskStatusSerializer(serializers.ModelSerializer):
             return None
         meta = obj.output_meta or {}
         in_meta = obj.input_meta or {}
-        # Keep the public-facing payload narrow; bare-bones for now.
-        return {
+        result = {
             "text": meta.get("text"),
             "url": meta.get("url"),
             "input_url": meta.get("input_url") or in_meta.get("image_url"),
             "cost_usd": float(obj.cost_usd or 0),
             "runtime_ms": obj.duration_ms or 0,
         }
+        if (obj.tool_id and getattr(obj.tool, "slug", None) == "image-compressor"):
+            result["compression"] = {
+                "filename":      meta.get("filename"),
+                "format":        meta.get("format"),
+                "input_size":    meta.get("input_size", 0),
+                "output_size":   meta.get("output_size", 0),
+                "bytes_saved":   meta.get("bytes_saved", 0),
+                "percent_saved": meta.get("percent_saved", 0.0),
+                "width":         meta.get("width"),
+                "height":        meta.get("height"),
+                "method":        meta.get("method"),
+            }
+        return result
 
     def get_completed_at(self, obj: ToolUsage):
         return obj.updated_at if obj.status in {"success", "failed", "blocked"} else None

@@ -8,6 +8,7 @@ import PostCard from "@/components/content/PostCard";
 import CommentThread from "@/components/content/CommentThread";
 import CommentForm from "@/components/content/CommentForm";
 import SignInPrompt from "@/components/auth/SignInPrompt";
+import FeaturedServices from "@/components/marketing/FeaturedServices";
 import { safeServerFetch } from "@/lib/api/server";
 import { getCurrentUser } from "@/lib/auth/server";
 import { formatDate, pluralize } from "@/lib/utils";
@@ -180,6 +181,16 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               ))}
             </div>
           )}
+
+          <div className="mt-14 max-w-3xl">
+            <FeaturedServices
+              contextKind="blog"
+              seedKey={post.slug}
+              limit={2}
+              heading="Vendors who do the work this post talks about"
+              subheading="Hand-picked from the marketplace based on what you just read."
+            />
+          </div>
         </Container>
       </article>
 

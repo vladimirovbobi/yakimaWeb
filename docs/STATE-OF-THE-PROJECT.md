@@ -1,6 +1,81 @@
-# State of the Project — 2026-05-04 (Sprint 1 brand-foundation + SEO landed)
+# State of the Project — 2026-05-04 (Sprint 1 + 1.5 landed)
 
 > Honest read on where we are, what works, and what's left before public launch.
+
+## Sprint 1.5 — Lossless Image Compressor + Featured Services (2026-05-04)
+
+Lead-magnet expansion + cross-promotion layer. All static checks green.
+
+**Image compressor lead magnet (third AI tool):**
+
+- Backend service `apps/tools/services/image_compressor.py` — Pillow-based, **truly lossless** by format:
+  - JPEG: `quality="keep"` preserves original quantization tables exactly + Huffman + progressive optimization + EXIF strip. Pixel-identical to input.
+  - PNG: `optimize=True` deflate optimization, fully lossless.
+  - WebP: `lossless=True, method=6` (slowest/best).
+  - GIF: optimize palette + frames losslessly.
+  - HEIC/HEIF: read via `pillow-heif` if installed → output as lossless WebP (HEIC encoding is patent-restricted).
+  - TIFF/BMP: convert to lossless PNG.
+- Up to 50 MB per file. 30 daily runs/member, 300/realtor.
+- DRF endpoint `POST /api/v1/tools/image-compressor/` + `apps/tools/tasks.run_image_compressor` Celery task on the img-worker queue.
+- Frontend `frontend/components/tools/ImageCompressorApp.tsx` — multi-file drag-drop, sequential upload to keep rate-limiter accurate, per-file before/after stats, total savings counter, per-file download links.
+- Page at `frontend/app/(dashboard)/tools/image-compressor/page.tsx`.
+- Tool registry: `apps/tools/management/commands/seed_tools.py` registers all three tools (description-writer, furniture-remover, image-compressor); wired into `seed_all`.
+- `/tools` landing page card grid bumped to 3-col, image compressor card added.
+
+**Description writer — stub replaced with real UI:**
+
+- `frontend/components/tools/DescriptionWriterApp.tsx` — full form (property type, beds, baths, sqft, key features, tone selector). Submits to existing `POST /api/v1/tools/description/` and polls task status. Renders the moderated draft with copy-to-clipboard.
+- `frontend/app/(dashboard)/tools/description-writer/page.tsx` — replaced `ComingSoon` placeholder with the real tool page.
+
+**Featured services (cross-promotion layer):**
+
+- `apps/marketplace/services/featured.py` — `pick_for_context()` selects 1-3 active+approved marketplace services per content surface. Context-driven category preferences (blog → photography/staging/marketing/lending; forum/show-tell → photography/staging; tool/furniture-remover → staging/photography; etc.). Vendor-deduped. Seeded RNG so the same page shows the same featured set across reloads. Cached in Redis 60-min TTL.
+- DRF endpoint `GET /api/public/v1/services/featured/?context=&seed=&category=&limit=` — anonymous-friendly. Tight `FeaturedServiceCardSerializer` with cover image, vendor, category, summary, rating, starting price.
+- `frontend/components/marketing/FeaturedServices.tsx` — server component, `safeServerFetch` with 10-min revalidate. Renders elegant 1- or 2-col card list with category badge, rating, summary, starting price.
+- Embedded on:
+  - Blog post detail (`/blog/[slug]`) — seeded by post slug
+  - Forum thread detail (`/community/threads/[slug]`) — seeded by thread slug
+  - Tools landing (`/tools`)
+  - Image compressor lead magnet (`/dashboard/tools/image-compressor`)
+  - Furniture remover (`/dashboard/tools/furniture-remover`)
+  - Description writer (`/dashboard/tools/description-writer`)
+- Hidden on the homepage to keep the welcoming-don't-reveal direction.
+
+**Verification gates:**
+
+- ✓ Frontend TypeScript: 0 errors
+- ✓ Frontend ESLint: 0 errors
+- ✓ Backend ruff on Sprint 1.5 files: All checks passed (added `RUF012` to project-level ignores — DRF idiom `permission_classes = [...]` conflicts with the rule)
+- ✓ Django `manage.py check`: clean (2 pre-existing allauth deprecation warnings)
+- ⚠ pytest: deferred — Postgres + Redis containers needed; Docker Desktop not running in this session.
+
+**Files added/modified this sub-sprint:**
+
+| Change | Path |
+|---|---|
+| NEW | `apps/tools/services/image_compressor.py` |
+| NEW | `apps/tools/management/commands/seed_tools.py` |
+| MOD | `apps/tools/api/views.py` (added `ImageCompressorRunView` + tool meta) |
+| MOD | `apps/tools/api/serializers.py` (compressor request/response + result enrichment) |
+| MOD | `apps/tools/api/urls_private.py` (new route) |
+| MOD | `apps/tools/tasks.py` (added `run_image_compressor`) |
+| NEW | `apps/marketplace/services/__init__.py` |
+| NEW | `apps/marketplace/services/featured.py` |
+| NEW | `apps/marketplace/api/views_featured.py` |
+| MOD | `apps/marketplace/api/urls_public_services.py` (new route) |
+| MOD | `apps/core/management/commands/seed_all.py` (chain `seed_tools`) |
+| MOD | `pyproject.toml` (RUF012 ignore for DRF idioms) |
+| NEW | `frontend/components/tools/ImageCompressorApp.tsx` |
+| NEW | `frontend/components/tools/DescriptionWriterApp.tsx` |
+| NEW | `frontend/components/marketing/FeaturedServices.tsx` |
+| NEW | `frontend/app/(dashboard)/tools/image-compressor/page.tsx` |
+| MOD | `frontend/app/(dashboard)/tools/description-writer/page.tsx` (real UI replaces ComingSoon) |
+| MOD | `frontend/app/(dashboard)/tools/furniture-remover/page.tsx` (FeaturedServices) |
+| MOD | `frontend/app/(public)/tools/page.tsx` (3-col + compressor + FeaturedServices) |
+| MOD | `frontend/app/(public)/blog/[slug]/page.tsx` (FeaturedServices) |
+| MOD | `frontend/app/(public)/community/threads/[slug]/page.tsx` (FeaturedServices) |
+
+---
 
 ## Sprint 1 — Brand Foundation + SEO + Welcoming UX (2026-05-04)
 

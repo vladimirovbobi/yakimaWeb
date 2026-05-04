@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import FurnitureRemoverApp from "@/components/tools/FurnitureRemoverApp";
+import FeaturedServices from "@/components/marketing/FeaturedServices";
 import { getCurrentUser } from "@/lib/auth/server";
 
 export const metadata = {
@@ -149,6 +150,14 @@ export default async function FurnitureRemoverPage() {
           ))}
         </div>
       </section>
+
+      <FeaturedServices
+        contextKind="tool/furniture-remover"
+        seedKey="furniture-remover"
+        limit={2}
+        heading="Want a stager to take it the rest of the way?"
+        subheading="Local stagers who pair well with our virtual prep tools."
+      />
     </div>
   );
 }

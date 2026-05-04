@@ -1,8 +1,10 @@
 """Celery tasks: every AI call goes through here. Never sync from views."""
 import logging
 import time
+import uuid
 
 from celery import shared_task
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
 from apps.moderation.services.pipeline import moderate
@@ -11,7 +13,16 @@ from .models import ToolUsage, UsageStatus
 from .services.description_writer import generate as gen_description
 from .services.furniture_remover import (
     FurnitureRemoverError,
+)
+from .services.furniture_remover import (
     run as run_furniture,
+)
+from .services.image_compressor import (
+    ImageCompressorError,
+    UnsupportedFormat,
+)
+from .services.image_compressor import (
+    compress as compress_image,
 )
 from .services.spend_cap import SpendCapExceeded, check_budget, record_spend_usd
 
@@ -55,13 +66,13 @@ def run_description_writer(self, usage_id: int) -> str:
     t0 = time.time()
     try:
         result = gen_description(facts)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         log.exception("description_writer failed")
         usage.status = UsageStatus.FAILED
         usage.error = str(e)[:500]
         usage.duration_ms = int((time.time() - t0) * 1000)
         usage.save(update_fields=["status", "error", "duration_ms", "updated_at"])
-        raise self.retry(exc=e)
+        raise self.retry(exc=e) from e
 
     # Layer 2: moderate the OUTPUT before persisting
     out_mod = moderate(result.text, target=None, context="tool_output")
@@ -82,7 +93,7 @@ def run_description_writer(self, usage_id: int) -> str:
     # Increment today's running cost so subsequent runs see the latest total.
     try:
         record_spend_usd(float(usage.cost_usd))
-    except Exception:  # noqa: BLE001
+    except Exception:
         log.exception("spend_cap.record_spend_usd failed (non-fatal)")
     return "success"
 
@@ -113,7 +124,7 @@ def run_furniture_remover(self, usage_id: int) -> dict:
     try:
         with default_storage.open(image_path, "rb") as f:
             image_bytes = f.read()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         log.exception("failed to read uploaded image")
         usage.status = UsageStatus.FAILED
         usage.error = f"read_failed:{exc}"[:500]
@@ -138,7 +149,7 @@ def run_furniture_remover(self, usage_id: int) -> dict:
             usage.error = str(exc)[:500]
             usage.save(update_fields=["status", "error", "updated_at"])
             return {"status": "failed", "error": "max_retries"}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         log.exception("furniture remover unexpected error")
         usage.status = UsageStatus.FAILED
         usage.error = str(exc)[:500]
@@ -155,4 +166,119 @@ def run_furniture_remover(self, usage_id: int) -> dict:
         "runtime_ms": result.runtime_ms,
         "block_reason": result.block_reason,
         "error": result.error,
+    }
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Image compressor (Sprint 1.5) — runs on the dedicated img-worker queue
+# ──────────────────────────────────────────────────────────────────────────
+@shared_task(bind=True, max_retries=2, queue="images")
+def run_image_compressor(self, usage_id: int) -> dict:
+    """Read the staged upload, run lossless compression, persist output.
+
+    Pure local CPU. No spend cap (no $ per run), no Gemini call. We still
+    rate-limit at the view boundary via the existing per-tool quota.
+    """
+    usage = ToolUsage.objects.select_related("tool", "user").filter(pk=usage_id).first()
+    if usage is None:
+        return {"status": "missing"}
+
+    image_path = (usage.input_meta or {}).get("upload_path")
+    filename = (usage.input_meta or {}).get("filename") or "image.jpg"
+    if not image_path:
+        usage.status = UsageStatus.FAILED
+        usage.error = "no upload path on ToolUsage"
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "no_upload_path"}
+
+    try:
+        with default_storage.open(image_path, "rb") as f:
+            payload = f.read()
+    except Exception as exc:
+        log.exception("image_compressor: read failed")
+        usage.status = UsageStatus.FAILED
+        usage.error = f"read_failed:{exc}"[:500]
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "read_failed"}
+
+    usage.status = UsageStatus.RUNNING
+    usage.save(update_fields=["status", "updated_at"])
+
+    t0 = time.time()
+    try:
+        result = compress_image(payload, filename)
+    except UnsupportedFormat as exc:
+        usage.status = UsageStatus.BLOCKED
+        usage.block_reason = "unsupported_format"
+        usage.error = str(exc)[:500]
+        usage.save(update_fields=["status", "block_reason", "error", "updated_at"])
+        return {"status": "blocked", "block_reason": "unsupported_format"}
+    except ImageCompressorError as exc:
+        log.warning("image_compressor: transient error: %s", exc)
+        try:
+            countdown = 15 * (2 ** self.request.retries)
+            raise self.retry(exc=exc, countdown=countdown)
+        except self.MaxRetriesExceededError:
+            usage.status = UsageStatus.FAILED
+            usage.error = str(exc)[:500]
+            usage.save(update_fields=["status", "error", "updated_at"])
+            return {"status": "failed", "error": "max_retries"}
+    except Exception as exc:
+        log.exception("image_compressor: unexpected error")
+        usage.status = UsageStatus.FAILED
+        usage.error = str(exc)[:500]
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "unhandled"}
+
+    output_suffix = uuid.uuid4().hex[:8]
+    output_path = (
+        f"tools/image-compressor/{usage.user_id}/results/"
+        f"{output_suffix}-{result.output_filename}"
+    )
+    try:
+        default_storage.save(output_path, ContentFile(result.output_bytes))
+    except Exception as exc:
+        log.exception("image_compressor: save failed")
+        usage.status = UsageStatus.FAILED
+        usage.error = f"save_failed:{exc}"[:500]
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "save_failed"}
+
+    try:
+        output_url = default_storage.url(output_path)
+    except Exception:  # noqa: BLE001
+        output_url = None
+    try:
+        input_url = default_storage.url(image_path)
+    except Exception:  # noqa: BLE001
+        input_url = None
+
+    usage.status = UsageStatus.SUCCESS
+    usage.cost_usd = 0
+    usage.duration_ms = int((time.time() - t0) * 1000)
+    usage.output_meta = {
+        "filename":      result.output_filename,
+        "format":        result.output_format,
+        "input_size":    result.input_size,
+        "output_size":   result.output_size,
+        "bytes_saved":   result.bytes_saved,
+        "percent_saved": result.percent_saved,
+        "width":         result.width,
+        "height":        result.height,
+        "method":        result.method,
+        "url":           output_url,
+        "output_path":   output_path,
+        "input_url":     input_url,
+    }
+    usage.save()
+
+    return {
+        "status":        "success",
+        "input_url":     input_url,
+        "output_url":    output_url,
+        "input_size":    result.input_size,
+        "output_size":   result.output_size,
+        "percent_saved": result.percent_saved,
+        "format":        result.output_format,
+        "runtime_ms":    usage.duration_ms,
     }

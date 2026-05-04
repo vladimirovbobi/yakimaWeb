@@ -1,58 +1,64 @@
 import { redirect } from "next/navigation";
 
-import DescriptionWriterApp from "@/components/tools/DescriptionWriterApp";
+import ImageCompressorApp from "@/components/tools/ImageCompressorApp";
 import FeaturedServices from "@/components/marketing/FeaturedServices";
 import { getCurrentUser } from "@/lib/auth/server";
 
 export const metadata = {
-  title: "Listing description writer",
+  title: "Lossless image compressor",
   description:
-    "Turn property facts into MLS-ready listing copy. Three voices, Fair Housing scrubbed, ~30 seconds per draft.",
+    "Shrink listing photos without losing a pixel of quality. JPG, PNG, WebP, HEIC, TIFF, GIF, BMP supported. Up to 50 MB per file.",
 };
 
 const STEPS = [
   {
     n: "01",
-    title: "Drop the facts",
-    body: "Bedrooms, baths, square feet, and the things that actually matter. Keep it short.",
+    title: "Drag in your photos",
+    body:
+      "JPG, PNG, WebP, HEIC, TIFF, GIF, BMP — up to 50 MB each, batch of any size.",
   },
   {
     n: "02",
-    title: "Pick a voice",
-    body: "Professional, warm, or luxury. We handle the prose; you keep the substance.",
+    title: "We re-encode losslessly",
+    body:
+      "JPEG keeps its original quantization tables; PNG/WebP/GIF run optimized; HEIC converts to lossless WebP. Pixel-identical to your input.",
   },
   {
     n: "03",
-    title: "Review and publish",
-    body: "Output is moderated for Fair Housing before it reaches you. Read it, tweak, publish.",
+    title: "Download — or send via delivery",
+    body:
+      "Per-file download links or grab the whole batch. Vendors can attach the compressed set directly to a buyer delivery package.",
   },
 ];
 
 const FACTS = [
-  { label: "Daily limit (member)", value: "10 runs" },
-  { label: "Daily limit (verified realtor)", value: "100 runs" },
-  { label: "Per-run cost", value: "~$0.015" },
-  { label: "Avg runtime", value: "20-40s" },
+  { label: "Max per file", value: "50 MB" },
+  { label: "Daily limit (member)", value: "30 runs" },
+  { label: "Daily limit (verified realtor)", value: "300 runs" },
+  { label: "Cost", value: "Free" },
+  { label: "Avg runtime", value: "2-5s" },
+  { label: "Pixel quality loss", value: "0% — fully lossless" },
 ];
 
-export default async function DescriptionWriterPage() {
+export default async function ImageCompressorPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/dashboard/tools/description-writer");
+  if (!user) redirect("/login?next=/dashboard/tools/image-compressor");
 
   return (
     <div className="max-w-5xl space-y-12">
       <header className="space-y-3">
-        <div className="ey text-gold">AI tool</div>
+        <div className="ey text-gold">Lead magnet</div>
         <h1 className="font-serif font-light text-ivory text-[clamp(2rem,4.5vw,3rem)] leading-[1.05]">
-          Description writer.
+          Lossless image compressor.
         </h1>
         <p className="text-mist max-w-2xl leading-relaxed text-base md:text-lg">
-          Turn property facts into MLS-ready listing copy. Three voices, Fair
-          Housing already checked, ready in about thirty seconds.
+          Smaller files. Same pixels. Your listing photos load faster on every
+          MLS, every social post, every email. JPG, PNG, WebP, HEIC, TIFF, GIF,
+          and BMP — drop a batch and pull them back compressed.
         </p>
       </header>
 
-      <DescriptionWriterApp />
+      <ImageCompressorApp />
 
       <section className="space-y-4" aria-labelledby="how-it-works">
         <div className="ey text-gold">How it works</div>
@@ -60,7 +66,7 @@ export default async function DescriptionWriterPage() {
           id="how-it-works"
           className="font-serif text-ivory text-2xl md:text-3xl"
         >
-          Three steps. Compliant by default.
+          Three steps. No quality loss. Ever.
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {STEPS.map((s) => (
@@ -78,7 +84,7 @@ export default async function DescriptionWriterPage() {
 
       <section className="space-y-4" aria-labelledby="facts">
         <h2 id="facts" className="font-serif text-ivory text-xl md:text-2xl">
-          Limits + cost
+          Facts
         </h2>
         <div className="border border-gold/22 bg-panel p-6 grid gap-3 sm:grid-cols-2 text-sm">
           {FACTS.map((f) => (
@@ -94,11 +100,11 @@ export default async function DescriptionWriterPage() {
       </section>
 
       <FeaturedServices
-        contextKind="tool/description-writer"
-        seedKey="description-writer"
+        contextKind="tool/image-compressor"
+        seedKey="image-compressor"
         limit={2}
-        heading="Pair your copy with photos that match"
-        subheading="Local photographers + brand studios verified through ARELLO."
+        heading="Need it shot before you compress it?"
+        subheading="Local photographers + stagers your colleagues already trust."
       />
     </div>
   );

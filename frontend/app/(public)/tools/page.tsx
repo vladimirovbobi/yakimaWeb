@@ -4,12 +4,13 @@ import Container from "@/components/layout/Container";
 import Hero from "@/components/marketing/Hero";
 import SectionHeader from "@/components/marketing/SectionHeader";
 import ScrollReveal from "@/components/reveal/ScrollReveal";
+import FeaturedServices from "@/components/marketing/FeaturedServices";
 import { Card, CardBody } from "@/components/ui/Card";
 
 export const metadata: Metadata = {
   title: "AI tools",
   description:
-    "Tools built for the realtor's day. Furniture remover and listing description writer, both AI-moderated, both Yakima-aware.",
+    "Tools built for the realtor's day. Furniture remover, listing description writer, and lossless image compressor — all AI-moderated, all Yakima-aware.",
 };
 
 const TOOLS = [
@@ -31,6 +32,16 @@ const TOOLS = [
       "Paste your listing details (beds, baths, neighborhood, the things that actually matter). Get a clean, MLS-ready description in three voices: factual, warm, or punchy. Fair Housing scrubbed before you ever see the draft.",
     cta: "Try description writer",
     href: "/dashboard/tools/description-writer",
+  },
+  {
+    eyebrow: "Photo prep",
+    name: "Image compressor",
+    summary:
+      "Shrink photos without losing a pixel. JPG, PNG, WebP, HEIC, TIFF, GIF, BMP.",
+    detail:
+      "Drag in a batch. We re-encode every file losslessly — same pixels, same dimensions, just smaller bytes. JPEG keeps its original quantization tables; PNG/WebP/GIF run optimized; HEIC converts to lossless WebP. Up to 50 MB per file.",
+    cta: "Try image compressor",
+    href: "/dashboard/tools/image-compressor",
   },
 ];
 
@@ -71,7 +82,7 @@ export default function ToolsLandingPage() {
             />
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-14">
             {TOOLS.map((t, i) => (
               <ScrollReveal key={t.name} delay={0.1 + i * 0.1}>
                 <Card className="h-full">
@@ -163,6 +174,16 @@ export default function ToolsLandingPage() {
               </p>
             </div>
           </ScrollReveal>
+
+          <div className="mt-14">
+            <FeaturedServices
+              contextKind="tools"
+              seedKey="tools-landing"
+              limit={2}
+              heading="Pair a tool with a pro"
+              subheading="Vendors local to the Yakima Valley your peers actually book."
+            />
+          </div>
         </Container>
       </section>
     </>
