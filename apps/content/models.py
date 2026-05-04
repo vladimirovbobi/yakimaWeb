@@ -1,4 +1,4 @@
-"""Polymorphic Post (org/blog/landing) + threaded Comment. All UGC moderated."""
+"""Polymorphic Post (org/blog/landing) + threaded Comment + Tag. All UGC moderated."""
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
@@ -8,6 +8,26 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.models import TimeStampedModel
 from apps.core.validators import MaxFileSizeValidator
 from apps.moderation.models import ModeratableMixin
+
+
+class Tag(TimeStampedModel):
+    """Lightweight tag for blog posts. Slug is canonical."""
+
+    slug = models.SlugField(unique=True, max_length=80)
+    name = models.CharField(max_length=80)
+
+    class Meta:
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)[:80]
+        super().save(*args, **kwargs)
 
 
 class PostType(models.TextChoices):
@@ -42,6 +62,7 @@ class Post(ModeratableMixin, TimeStampedModel):
     )
     published_at = models.DateTimeField(null=True, blank=True, db_index=True)
     view_count = models.PositiveBigIntegerField(default=0)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
 
     class Meta:
         verbose_name = "Post"
@@ -79,6 +100,11 @@ class Comment(ModeratableMixin, TimeStampedModel):
     body   = models.TextField(max_length=4000)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True,
                                 related_name="replies")
+    image  = models.ImageField(
+        upload_to="content/comments/", null=True, blank=True,
+        validators=[MaxFileSizeValidator(10)],
+        help_text="Optional image attachment. Image moderation runs post-save.",
+    )
 
     class Meta:
         verbose_name = "Comment"

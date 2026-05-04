@@ -1,7 +1,15 @@
 """Locked-down moderation admin."""
 from django.contrib import admin
 
-from .models import Flag, ModerationDecision
+from .models import ActionTemplate, Flag, ModerationDecision
+
+
+@admin.register(ActionTemplate)
+class ActionTemplateAdmin(admin.ModelAdmin):
+    list_display  = ("slug", "label", "action", "is_active", "sort_order")
+    list_filter   = ("action", "is_active")
+    search_fields = ("slug", "label", "default_reason")
+    list_editable = ("is_active", "sort_order")
 
 
 @admin.register(ModerationDecision)

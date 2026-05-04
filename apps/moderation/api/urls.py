@@ -7,9 +7,11 @@ from .views import (
     ActionTemplateListView,
     DecisionCreateView,
     EscalateView,
+    EscalationListView,
     FlagCreateView,
     FlagListView,
     InvestigateUserView,
+    ModStatsView,
     NextQueueItemView,
     QueueListView,
 )
@@ -23,4 +25,6 @@ urlpatterns = [
     path("flags/create/",                   FlagCreateView.as_view(),        name="mod-flag-create"),
     path("templates/",                      ActionTemplateListView.as_view(), name="mod-template-list"),
     path("investigate/<int:user_id>/",      InvestigateUserView.as_view(),   name="mod-investigate-user"),
+    path("stats/",                          ModStatsView.as_view(),          name="mod-stats"),
+    path("escalations/",                    EscalationListView.as_view(),    name="mod-escalation-list"),
 ]

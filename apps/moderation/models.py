@@ -1,4 +1,4 @@
-"""Moderation: ModeratableMixin (abstract), ModerationDecision, Flag."""
+"""Moderation: ModeratableMixin (abstract), ModerationDecision, Flag, ActionTemplate."""
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -111,3 +111,29 @@ class Flag(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.get_reason_display()} by {self.reporter} @ {self.created_at:%Y-%m-%d}"
+
+
+class ActionTemplate(TimeStampedModel):
+    """Preset reasons for one-click moderator decisions. Seeded by management command."""
+
+    ACTION_CHOICES = (
+        ("approve", _("Approve")),
+        ("remove", _("Remove")),
+    )
+
+    slug = models.SlugField(unique=True)
+    label = models.CharField(max_length=100)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    default_reason = models.TextField()
+    notify_template_id = models.CharField(max_length=80, blank=True,
+                                          help_text="Email template ID for notification.")
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Action template"
+        verbose_name_plural = "Action templates"
+        ordering = ["sort_order", "label"]
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.action})"

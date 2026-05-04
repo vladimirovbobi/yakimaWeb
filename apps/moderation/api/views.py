@@ -39,6 +39,7 @@ from apps.core.api.permissions import IsModerator
 from apps.core.api.throttling import FlagThrottle
 
 from ..models import (
+    ActionTemplate,
     Flag,
     FlagStatus,
     ModerationAction,
@@ -46,33 +47,21 @@ from ..models import (
     ModerationLayer,
     ModerationStatus,
 )
+from ..services.mod_stats import stats_for_moderator, stats_timeseries
 from .serializers import (
     ActionTemplateSerializer,
     DecisionCreateSerializer,
     EscalateSerializer,
+    EscalationListItemSerializer,
     FlagCreateSerializer,
     FlagSerializer,
     InvestigateUserResultSerializer,
-    ModerationDecisionSerializer,
+    ModeratorStatsSerializer,
     QueueItemSerializer,
 )
 
 log = logging.getLogger(__name__)
 User = get_user_model()
-
-# ─── Hardcoded action templates (move to model in v1.1) ──────────────────
-_ACTION_TEMPLATES: list[dict[str, str]] = [
-    {"slug": "removed_spam", "label": "Removed — Spam",
-     "action": "remove", "default_reason": "Removed: spam / promotional."},
-    {"slug": "removed_harassment", "label": "Removed — Harassment",
-     "action": "remove", "default_reason": "Removed: harassment / personal attack."},
-    {"slug": "removed_off_topic", "label": "Removed — Off-topic",
-     "action": "remove", "default_reason": "Removed: off-topic for this surface."},
-    {"slug": "approved_with_edit", "label": "Approved — With edit",
-     "action": "approve", "default_reason": "Approved after edit by moderator."},
-    {"slug": "approved_no_change", "label": "Approved — No change",
-     "action": "approve", "default_reason": "Approved as-is; classifier flagged borderline content."},
-]
 
 
 # ─── Filters ─────────────────────────────────────────────────────────────
@@ -310,18 +299,18 @@ class FlagListView(ListAPIView):
 
 # ─── Action templates ────────────────────────────────────────────────────
 class ActionTemplateListView(ListAPIView):
-    """GET /api/v1/mod/templates/ — preset reasons for one-click decisions."""
+    """GET /api/v1/mod/templates/ — preset reasons for one-click decisions.
+
+    Sourced from ActionTemplate model (Sprint 5). Seed via:
+        python manage.py seed_action_templates
+    """
 
     serializer_class = ActionTemplateSerializer
     permission_classes = (IsModerator,)
     pagination_class = None
 
     def get_queryset(self):
-        return _ACTION_TEMPLATES
-
-    def list(self, request, *args, **kwargs):  # noqa: ANN001, ARG002
-        ser = self.get_serializer(_ACTION_TEMPLATES, many=True)
-        return Response(ser.data, status=status.HTTP_200_OK)
+        return ActionTemplate.objects.filter(is_active=True).order_by("sort_order", "label")
 
 
 # ─── Investigate user ────────────────────────────────────────────────────
@@ -413,6 +402,44 @@ class InvestigateUserView(GenericAPIView):
         if target.created_at:
             account_age_days = (timezone.now() - target.created_at).days
 
+        # Sprint 5 — pattern signals.
+        # Heuristic A: same reporter mass-flagging this user (>=3 in 7 days)
+        # Heuristic B: rapid posting velocity (>10 items in 24h)
+        # Heuristic C: repeat offender (>=2 prior remove/shadow warnings)
+        cutoff_7 = timezone.now() - timedelta(days=7)
+        cutoff_30 = timezone.now() - timedelta(days=30)
+
+        seen_counts: dict[int, int] = {}
+        for f in Flag.objects.filter(target_id=target.pk, created_at__gte=cutoff_7):
+            seen_counts[f.reporter_id] = seen_counts.get(f.reporter_id, 0) + 1
+        repeat_reporter_ids = [uid for uid, c in seen_counts.items() if c >= 3]
+
+        # Recent moderation decisions where this user was the actor.
+        recent_decision_count_30d = ModerationDecision.objects.filter(
+            created_at__gte=cutoff_30,
+            actor=target,
+        ).count()
+
+        post_count_24h = 0
+        try:
+            from apps.content.models import Comment as _C
+            from apps.content.models import Post as _P
+            cutoff_24 = timezone.now() - timedelta(hours=24)
+            post_count_24h = (_P.objects.filter(author=target, created_at__gte=cutoff_24).count()
+                              + _C.objects.filter(author=target, created_at__gte=cutoff_24).count())
+        except Exception:  # noqa: BLE001
+            post_count_24h = 0
+
+        pattern_signals: list[str] = []
+        if repeat_reporter_ids:
+            pattern_signals.append(
+                f"mass_flagging_by_{len(repeat_reporter_ids)}_reporters"
+            )
+        if post_count_24h > 10:
+            pattern_signals.append("rapid_posting_velocity")
+        if warnings >= 2:
+            pattern_signals.append("repeat_offender")
+
         payload = {
             "user": target,
             "recent_posts": recent_posts,
@@ -424,6 +451,66 @@ class InvestigateUserView(GenericAPIView):
             "total_warnings": warnings,
             "last_seen": target.last_seen,
             "account_age_days": account_age_days,
+            "pattern_signals": pattern_signals,
+            "post_count_24h": post_count_24h,
+            "recent_decision_count_30d": recent_decision_count_30d,
         }
         ser = self.get_serializer(payload)
         return Response(ser.data, status=status.HTTP_200_OK)
+
+
+# ─── Moderator stats ────────────────────────────────────────────────────
+class ModStatsView(GenericAPIView):
+    """GET /api/v1/mod/stats/ — own stats (mod) or any moderator's (?user_id=, op-only)."""
+
+    serializer_class = ModeratorStatsSerializer
+    permission_classes = (IsModerator,)
+
+    def get(self, request: Request) -> Response:
+        target_uid = request.query_params.get("user_id")
+        if target_uid:
+            try:
+                target_uid_int = int(target_uid)
+            except ValueError:
+                return Response({"detail": "user_id must be int."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            is_op = bool(
+                request.user.is_superuser
+                or request.user.groups.filter(name="operator").exists()
+            )
+            if target_uid_int != request.user.pk and not is_op:
+                raise PermissionDenied("Operator role required to view another mod's stats.")
+            user_id = target_uid_int
+        else:
+            user_id = request.user.pk
+
+        data = stats_for_moderator(user_id)
+        data["timeseries_30d"] = stats_timeseries(user_id, days=30)
+        ser = self.get_serializer(data)
+        return Response(ser.data, status=status.HTTP_200_OK)
+
+
+# ─── Escalation list ────────────────────────────────────────────────────
+class EscalationListView(ListAPIView):
+    """GET /api/v1/mod/escalations/ — operator inbox of mod escalations.
+
+    Escalations are ModerationDecision rows with `output.escalated == True`.
+    See EscalateView for write path.
+    """
+
+    serializer_class = EscalationListItemSerializer
+    permission_classes = (IsModerator,)
+    pagination_class = TimeCursorPagination
+
+    def get_queryset(self):
+        # Only operators see escalations. Mods get an empty list per safety contract.
+        u = self.request.user
+        is_op = bool(
+            u.is_superuser or u.groups.filter(name="operator").exists()
+        )
+        if not is_op:
+            return ModerationDecision.objects.none()
+        return (ModerationDecision.objects
+                .filter(layer=ModerationLayer.HUMAN, output__escalated=True)
+                .select_related("actor", "target_type")
+                .order_by("-created_at"))

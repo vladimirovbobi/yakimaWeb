@@ -1,9 +1,10 @@
-"""Content API views — public list/detail + private CRUD for posts and comments."""
+"""Content API views — public list/detail + private CRUD for posts, tags, comments."""
 from __future__ import annotations
 
-from django.db.models import F
+from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, generics, permissions
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.content.models import (
@@ -13,6 +14,7 @@ from apps.content.models import (
     PostStatus,
     PostType,
     SocialEmbed,
+    Tag,
 )
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsOwnerOrReadOnly, IsRealtor
@@ -26,6 +28,7 @@ from .serializers import (
     PostDetailSerializer,
     PostListSerializer,
     SocialEmbedSerializer,
+    TagSerializer,
 )
 
 
@@ -49,6 +52,51 @@ class PublicPostListView(generics.ListAPIView):
         if post_type in PostType.values:
             qs = qs.filter(post_type=post_type)
         return qs.order_by("-published_at", "-created_at")
+
+
+class PublicTagListView(generics.ListAPIView):
+    """GET /api/public/v1/posts/tags/ — all tags with post_count, ordered by usage."""
+
+    serializer_class   = TagSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class   = None
+
+    def get_queryset(self):
+        return (Tag.objects
+                .annotate(post_count_annotated=Count(
+                    "posts",
+                    filter=Q(posts__status=PostStatus.PUBLISHED,
+                             posts__moderation_status="approved"),
+                ))
+                .filter(post_count_annotated__gt=0)
+                .order_by("-post_count_annotated", "name"))
+
+
+class PublicTagDetailView(generics.ListAPIView):
+    """GET /api/public/v1/posts/tags/<slug>/ — posts under a specific tag."""
+
+    serializer_class   = PostListSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class   = TimeCursorPagination
+
+    def get_queryset(self):
+        slug = self.kwargs["slug"]
+        return (Post.objects
+                .filter(status=PostStatus.PUBLISHED, moderation_status="approved",
+                        tags__slug=slug)
+                .select_related("author", "author__realtor_profile")
+                .prefetch_related("tags")
+                .order_by("-published_at", "-created_at"))
+
+    def list(self, request, *args, **kwargs):
+        tag = get_object_or_404(Tag, slug=self.kwargs["slug"])
+        response = super().list(request, *args, **kwargs)
+        # Tack on tag context for the page hero.
+        response.data = {
+            "tag": TagSerializer(tag).data,
+            **(response.data if isinstance(response.data, dict) else {"results": response.data}),
+        }
+        return response
 
 
 class PublicPostDetailView(generics.RetrieveAPIView):
@@ -177,10 +225,14 @@ class PostUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # Private — Comments
 # ──────────────────────────────────────────────────────────────────────────
 class CommentCreateView(generics.CreateAPIView):
-    """POST /api/v1/posts/<post_slug>/comments/ — auto-moderated on save."""
+    """POST /api/v1/posts/<post_slug>/comments/ — auto-moderated on save.
+
+    Accepts multipart/form-data when an `image` is attached.
+    """
 
     serializer_class   = CommentCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes     = [MultiPartParser, FormParser]
     throttle_classes   = [CommentThrottle]
 
     def get_serializer_context(self):

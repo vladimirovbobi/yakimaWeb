@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.moderation.tasks import moderate_content
+from apps.moderation.tasks import moderate_content, moderate_image_task
 
 from .models import Comment, Post
 
@@ -24,3 +24,7 @@ def _moderate_comment(sender, instance: Comment, created: bool, **kwargs):  # no
     if created and instance.body.strip():
         ct = ContentType.objects.get_for_model(Comment)
         moderate_content.delay(ct.pk, instance.pk, text_attr="body", context="comment")
+    # Image moderation — runs whenever the image field is populated.
+    if instance.image and instance.image.name:
+        ct = ContentType.objects.get_for_model(Comment)
+        moderate_image_task.delay(ct.pk, instance.pk, image_attr="image")

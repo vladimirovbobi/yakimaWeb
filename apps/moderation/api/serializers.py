@@ -14,6 +14,7 @@ from rest_framework import serializers
 from apps.accounts.api.serializers import PublicUserSerializer, PrivateUserSerializer
 
 from ..models import (
+    ActionTemplate,
     Flag,
     FlagReason,
     FlagStatus,
@@ -219,11 +220,14 @@ class FlagCreateSerializer(serializers.Serializer):
 
 
 # ─── Action templates ─────────────────────────────────────────────────────
-class ActionTemplateSerializer(serializers.Serializer):
-    slug = serializers.CharField()
-    label = serializers.CharField()
-    action = serializers.ChoiceField(choices=(("approve", "approve"), ("remove", "remove")))
-    default_reason = serializers.CharField()
+class ActionTemplateSerializer(serializers.ModelSerializer):
+    """Backed by ActionTemplate model (Sprint 5). Read-only over the wire."""
+
+    class Meta:
+        model = ActionTemplate
+        fields = ("slug", "label", "action", "default_reason",
+                  "notify_template_id", "is_active", "sort_order")
+        read_only_fields = fields
 
 
 # ─── Decision input ───────────────────────────────────────────────────────
@@ -267,3 +271,54 @@ class InvestigateUserResultSerializer(serializers.Serializer):
     total_warnings = serializers.IntegerField()
     last_seen = serializers.DateTimeField(allow_null=True)
     account_age_days = serializers.IntegerField()
+    pattern_signals = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list,
+    )
+    post_count_24h = serializers.IntegerField(required=False, default=0)
+    recent_decision_count_30d = serializers.IntegerField(required=False, default=0)
+
+
+# ─── Moderator stats ─────────────────────────────────────────────────────
+class _StatsTimePoint(serializers.Serializer):
+    day = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class ModeratorStatsSerializer(serializers.Serializer):
+    items_reviewed_30d = serializers.IntegerField()
+    items_reviewed_7d = serializers.IntegerField()
+    agreement_rate = serializers.FloatField()
+    reversal_rate = serializers.FloatField()
+    avg_response_minutes = serializers.FloatField()
+    current_streak = serializers.IntegerField()
+    queue_position = serializers.IntegerField()
+    timeseries_30d = _StatsTimePoint(many=True, required=False, default=list)
+
+
+# ─── Escalation list ─────────────────────────────────────────────────────
+class EscalationListItemSerializer(serializers.ModelSerializer):
+    """Operator-tier escalation row. Free-text rationale never exposed to mods."""
+
+    target_type = serializers.SerializerMethodField()
+    target_excerpt = serializers.SerializerMethodField()
+    escalated_by = PublicUserSerializer(source="actor", read_only=True)
+    notes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ModerationDecision
+        fields = (
+            "id", "target_type", "target_id", "target_excerpt",
+            "severity", "notes", "escalated_by", "created_at",
+        )
+        read_only_fields = fields
+
+    def get_target_type(self, obj: ModerationDecision) -> str:
+        return _target_type_slug(obj.target_type)
+
+    def get_target_excerpt(self, obj: ModerationDecision) -> str:
+        return _target_excerpt(obj.target)
+
+    def get_notes(self, obj: ModerationDecision) -> str:
+        if not isinstance(obj.output, dict):
+            return ""
+        return str(obj.output.get("notes", ""))[:1000]

@@ -1,8 +1,15 @@
 """Locked-down content admin."""
 from django.contrib import admin
 
-from .models import Comment, NewsletterSubscription, Post, SocialEmbed
+from .models import Comment, NewsletterSubscription, Post, SocialEmbed, Tag
 from .services.social import resolve
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display  = ("slug", "name", "created_at")
+    search_fields = ("slug", "name")
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(Post)
