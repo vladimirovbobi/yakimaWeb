@@ -67,3 +67,5 @@ Thumbs.db
 *.pem
 *.key
 secrets/
+dev.sqlite3
+.claude/

@@ -53,32 +53,40 @@ export default function PostCard({ post, priority }: PostCardProps) {
           </p>
           <div className="mt-auto flex items-center justify-between gap-4 pt-5 border-t border-gold/14">
             <div className="flex items-center gap-3 min-w-0">
-              {post.author.avatar_url ? (
-                <Image
-                  src={post.author.avatar_url}
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="rounded-full border border-gold/22"
-                />
-              ) : (
-                <div
-                  aria-hidden
-                  className="w-7 h-7 rounded-full bg-warm border border-gold/22 flex items-center justify-center text-[10px] text-gold"
-                >
-                  {post.author.display_name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="text-xs text-mist truncate">
-                {post.author.display_name}
-              </span>
-              {post.author.is_realtor && post.author.is_verified && (
-                <span
-                  title="Verified realtor"
-                  aria-label="Verified realtor"
-                  className="w-2 h-2 rounded-full bg-gold flex-shrink-0"
-                />
-              )}
+              {(() => {
+                const author = post.author || {};
+                const name = author.display_name || author.full_name || author.email || "Author";
+                const avatar = author.avatar_url || author.avatar || null;
+                const verified = !!(author.is_realtor && (author.is_verified || author.verified));
+                return (
+                  <>
+                    {avatar ? (
+                      <Image
+                        src={avatar}
+                        alt=""
+                        width={28}
+                        height={28}
+                        className="rounded-full border border-gold/22"
+                      />
+                    ) : (
+                      <div
+                        aria-hidden
+                        className="w-7 h-7 rounded-full bg-warm border border-gold/22 flex items-center justify-center text-[10px] text-gold"
+                      >
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-xs text-mist truncate">{name}</span>
+                    {verified && (
+                      <span
+                        title="Verified realtor"
+                        aria-label="Verified realtor"
+                        className="w-2 h-2 rounded-full bg-gold flex-shrink-0"
+                      />
+                    )}
+                  </>
+                );
+              })()}
             </div>
             <span className="text-[11px] uppercase tracking-luxe text-dim flex-shrink-0">
               {formatDate(post.published_at)}

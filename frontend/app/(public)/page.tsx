@@ -21,9 +21,11 @@ interface Service {
   id: number;
   slug: string;
   title: string;
-  vendor_name: string;
-  category: string;
+  vendor?: { business_name?: string; name?: string } | null;
+  vendor_name?: string;
+  category?: { slug?: string; name?: string } | string | null;
   starting_price?: number | null;
+  starting_price_cents?: number | null;
 }
 
 interface Thread {
@@ -218,15 +220,22 @@ export default async function HomePage() {
                     <Card className="h-full">
                       <CardBody>
                         <Badge tone="gold" className="mb-4">
-                          {svc.category}
+                          {typeof svc.category === "string"
+                            ? svc.category
+                            : (svc.category?.name ?? "Service")}
                         </Badge>
                         <h3 className="font-serif text-xl text-ivory font-light leading-tight mb-3 group-hover:text-gold-hi transition-colors">
                           {svc.title}
                         </h3>
-                        <p className="text-mist text-sm">{svc.vendor_name}</p>
-                        {svc.starting_price != null && (
+                        <p className="text-mist text-sm">
+                          {svc.vendor_name ||
+                            svc.vendor?.business_name ||
+                            svc.vendor?.name ||
+                            "Vendor"}
+                        </p>
+                        {(svc.starting_price ?? (svc.starting_price_cents != null ? svc.starting_price_cents / 100 : null)) != null && (
                           <p className="font-serif text-gold text-2xl mt-5">
-                            from ${svc.starting_price.toLocaleString()}
+                            from ${(svc.starting_price ?? (svc.starting_price_cents ?? 0) / 100).toLocaleString()}
                           </p>
                         )}
                       </CardBody>

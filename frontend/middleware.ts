@@ -4,7 +4,11 @@ const PROTECTED_PREFIXES = [
   "/dashboard",
   "/account",
   "/realtor",
+  "/vendor",
+  "/mod",
+  "/ops",
   "/operator",
+  "/notifications",
   "/2fa",
 ];
 const AUTH_PAGES = ["/login", "/signup"];

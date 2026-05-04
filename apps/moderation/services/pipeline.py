@@ -99,9 +99,11 @@ def _record(target, result: PipelineResult, input_hash: str,
     )
 
     if target is not None and hasattr(target, "moderation_status"):
-        target.moderation_status = _ACTION_TO_STATUS.get(
-            result.action, ModerationStatus.PENDING,
+        # Use queryset.update() not target.save() — avoids re-firing post_save
+        # signals that would queue another moderation task (infinite recursion
+        # under CELERY_TASK_ALWAYS_EAGER=True; benign-but-wasteful in async mode).
+        type(target).objects.filter(pk=target.pk).update(
+            moderation_status=_ACTION_TO_STATUS.get(result.action, ModerationStatus.PENDING),
+            moderation_score=result.severity,
+            moderated_at=timezone.now(),
         )
-        target.moderation_score = result.severity
-        target.moderated_at = timezone.now()
-        target.save(update_fields=["moderation_status", "moderation_score", "moderated_at"])
