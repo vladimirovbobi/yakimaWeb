@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/fetch";
 import type { CurrentUser } from "@/lib/auth/server";
 import { useToast } from "@/components/ui/Toast";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 interface DashboardHeaderProps {
   user: CurrentUser;
@@ -45,6 +46,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           >
             Dashboard
           </Link>
+          <NotificationBell />
           <span className="text-xs text-mist hidden md:inline truncate max-w-[180px]">
             {user.display_name || user.email}
           </span>

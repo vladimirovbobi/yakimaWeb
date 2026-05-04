@@ -319,9 +319,15 @@ class MyRealtorProfileView(generics.RetrieveUpdateAPIView):
 
 
 class MyVendorProfileView(generics.RetrieveUpdateAPIView):
-    """GET/PATCH /api/v1/me/vendor/."""
+    """GET/PATCH /api/v1/me/vendor/.
 
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    GET works for any authenticated user — the frontend wizard relies on this
+    to discover whether a draft exists. Returns 204 with an empty payload when
+    there is no profile yet so the wizard can branch to the business step
+    cleanly. PATCH still requires an existing vendor profile.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = VendorProfileSerializer
 
     def get_object(self):
@@ -329,6 +335,17 @@ class MyVendorProfileView(generics.RetrieveUpdateAPIView):
         if profile is None:
             raise NotFound("No vendor profile yet.")
         return profile
+
+    def retrieve(self, request, *args, **kwargs):
+        profile = getattr(request.user, "vendor_profile", None)
+        if profile is None:
+            return Response(
+                {"detail": "no_vendor_profile",
+                 "current_step": "business",
+                 "wizard_state": {}},
+                status=status.HTTP_200_OK,
+            )
+        return super().retrieve(request, *args, **kwargs)
 
 
 class MyToolUsageListView(generics.ListAPIView):

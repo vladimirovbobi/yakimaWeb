@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -416,7 +417,7 @@ class VendorOnboardStepView(generics.GenericAPIView):
         profile = getattr(user, "vendor_profile", None)
 
         if step == "business":
-            business_name = data.get("business_name", "").strip()
+            business_name = (data.get("business_name") or "").strip()
             if not business_name and not profile:
                 raise ValidationError({"business_name": "Required to start onboarding."})
             if not profile:
@@ -424,6 +425,8 @@ class VendorOnboardStepView(generics.GenericAPIView):
                 profile = VendorProfile.objects.create(
                     user=user, business_name=business_name, slug=slug,
                     tagline=data.get("tagline", ""), website=data.get("website", ""),
+                    about=data.get("about", ""),
+                    contact_phone=data.get("contact_phone", ""),
                     status=VendorProfile.Status.DRAFT,
                 )
                 user.is_vendor = True
@@ -431,45 +434,100 @@ class VendorOnboardStepView(generics.GenericAPIView):
             else:
                 if business_name:
                     profile.business_name = business_name
-                if "tagline" in data:
-                    profile.tagline = data["tagline"]
-                if "website" in data:
-                    profile.website = data["website"]
+                for f in ("tagline", "website", "contact_phone", "about"):
+                    if f in data:
+                        setattr(profile, f, data[f])
                 profile.save()
+            self._save_wizard(profile, "business", {
+                "name": profile.business_name,
+                "tagline": profile.tagline,
+                "website": profile.website,
+                "contact_phone": profile.contact_phone,
+                "about": profile.about,
+            }, next_step="categories")
             return Response(
-                {"step": step, "vendor_slug": profile.slug, "status": profile.status},
+                {"step": step, "vendor_slug": profile.slug,
+                 "status": profile.status, "wizard_state": profile.wizard_state},
                 status=status.HTTP_200_OK,
             )
 
         if not profile:
             raise ValidationError("Complete the business step first.")
 
-        if step in ("categories", "services", "gallery"):
-            # Stored on the profile as side-effects in the wizard's session payload.
-            # For now, treat these steps as autosave no-ops at the DB level — the
-            # actual category/service/image wiring happens via dedicated endpoints.
-            # TODO(phase-5.2): persist wizard scratchpad to a JSONField or session.
+        if step == "categories":
+            self._save_wizard(profile, "categories",
+                              data.get("categories", []),
+                              next_step="services")
             return Response(
-                {"step": step, "saved": True, "echo": data},
+                {"step": step, "saved": True, "wizard_state": profile.wizard_state},
+                status=status.HTTP_200_OK,
+            )
+
+        if step == "services":
+            self._save_wizard(profile, "services",
+                              data.get("services", []),
+                              next_step="gallery")
+            return Response(
+                {"step": step, "saved": True, "wizard_state": profile.wizard_state},
+                status=status.HTTP_200_OK,
+            )
+
+        if step == "gallery":
+            self._save_wizard(profile, "gallery",
+                              data.get("gallery", []),
+                              next_step="publish")
+            return Response(
+                {"step": step, "saved": True, "wizard_state": profile.wizard_state},
                 status=status.HTTP_200_OK,
             )
 
         if step == "publish":
             if not data.get("accept_terms"):
                 raise ValidationError({"accept_terms": "You must accept the terms."})
-            # Move to ACTIVE — admin can flip to SUSPENDED on review.
-            # ACCESS-MATRIX says "Vendor application under review" → status remains
-            # DRAFT until ops approves; flipping to ACTIVE is op-only. We instead
-            # leave status=DRAFT and surface a `submitted_at` flag.
-            # TODO(phase-5.2): add VendorProfile.submitted_at + ops review flow.
+            now = timezone.now()
+            profile.submitted_at = now
+            self._save_wizard(profile, "publish",
+                              {"submitted_at": now.isoformat()},
+                              next_step="publish")
+            # Status stays DRAFT — ops flips to ACTIVE on review.
             profile.save()
+            # Best-effort notify the vendor that their submission was received.
+            try:
+                from apps.notifications.services import notify
+                notify(
+                    user, "vendor_approved",
+                    title="Vendor application submitted",
+                    body="Your application is under review. Most vendors are "
+                         "approved within 24 hours.",
+                    link="/dashboard/vendor",
+                )
+            except Exception:  # noqa: BLE001
+                pass
             return Response(
-                {"step": step, "status": profile.status, "submitted": True},
+                {"step": step, "status": profile.status,
+                 "submitted_at": profile.submitted_at,
+                 "wizard_state": profile.wizard_state},
                 status=status.HTTP_200_OK,
             )
 
         # Unreachable.
         raise ValidationError({"step": "Unhandled step."})
+
+    @staticmethod
+    def _save_wizard(profile: VendorProfile, step: str, value, *, next_step: str) -> None:
+        state = dict(profile.wizard_state or {})
+        data = dict(state.get("data") or {})
+        data[step] = value
+        completed = list(state.get("completed_steps") or [])
+        if step not in completed:
+            completed.append(step)
+        state["data"] = data
+        state["completed_steps"] = completed
+        state["current_step"] = next_step
+        profile.wizard_state = state
+        profile.save(update_fields=["wizard_state", "submitted_at",
+                                     "tagline", "website", "contact_phone",
+                                     "about", "business_name", "updated_at"])
 
     @staticmethod
     def _unique_vendor_slug(business_name: str) -> str:

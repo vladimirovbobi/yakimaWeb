@@ -1,18 +1,23 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/server";
-import ComingSoon from "@/components/dashboard/ComingSoon";
+import { safeServerFetch } from "@/lib/api/server";
 
-export default async function VendorOnboardPage() {
+interface MyVendor {
+  current_step?: string;
+  wizard_state?: { current_step?: string };
+}
+
+export default async function VendorOnboardEntryPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/dashboard/vendor/onboard");
 
-  return (
-    <ComingSoon
-      eyebrow="Vendor onboarding"
-      title="Get listed in the marketplace."
-      sprint="Sprint 4"
-      body="A 5-step wizard: business info, service area, primary category, sample work, and your first service. Lands in Sprint 4."
-      back={{ label: "Back to dashboard", href: "/dashboard" }}
-    />
+  const me = await safeServerFetch<MyVendor>(
+    "/api/v1/me/vendor/",
+    {},
+    { auth: true },
   );
+
+  const step =
+    me?.wizard_state?.current_step || me?.current_step || "business";
+  redirect(`/dashboard/vendor/onboard/${step}`);
 }

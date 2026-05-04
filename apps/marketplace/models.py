@@ -184,15 +184,20 @@ class Lead(TimeStampedModel):
         return self.status == LeadStatus.WON
 
 
-class LeadMessage(TimeStampedModel):
+class LeadMessage(ModeratableMixin, TimeStampedModel):
     """In-platform message thread for a lead. Phase 5.1 wires real-time."""
     lead   = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                 related_name="lead_messages_sent")
     body   = models.TextField(max_length=4000)
+    attachment_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["lead", "created_at"]),
+            models.Index(fields=["moderation_status"]),
+        ]
 
 
 class Review(ModeratableMixin, TimeStampedModel):

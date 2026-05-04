@@ -128,14 +128,20 @@ class RealtorProfilePartialUpdateSerializer(serializers.ModelSerializer):
 # ──────────────────────────────────────────────────────────────────────────
 class VendorProfileSerializer(serializers.ModelSerializer):
     user = PublicUserSerializer(read_only=True)
+    current_step = serializers.CharField(read_only=True)
+    completed_steps = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = VendorProfile
         fields = (
             "id", "user", "business_name", "slug", "status",
-            "tagline", "website",
+            "tagline", "website", "about", "contact_phone",
+            "wizard_state", "submitted_at",
+            "current_step", "completed_steps",
         )
-        read_only_fields = ("id", "user", "slug", "status")
+        read_only_fields = ("id", "user", "slug", "status",
+                            "wizard_state", "submitted_at",
+                            "current_step", "completed_steps")
 
 
 # ──────────────────────────────────────────────────────────────────────────

@@ -16,7 +16,10 @@ env = environ.Env(
     FEATURE_AI_TOOLS=(bool, False),
     FEATURE_MARKETPLACE=(bool, False),
     FEATURE_FORUM=(bool, False),
+    # COEP is conservative — only flips on for /api+/admin etc when enabled.
+    ENABLE_COEP=(bool, False),
 )
+ENABLE_COEP = env("ENABLE_COEP")
 environ.Env.read_env(BASE_DIR / ".env")
 
 # ─── Core ────────────────────────────────────────────────────────────────
@@ -73,6 +76,7 @@ LOCAL_APPS = [
     "apps.tools",
     "apps.forum",
     "apps.marketplace",
+    "apps.notifications",
     "apps.operations",
 ]
 
@@ -96,6 +100,8 @@ MIDDLEWARE = [
     "axes.middleware.AxesMiddleware",
     "apps.audit.middleware.AccessLogMiddleware",
     "apps.admin_tools.middleware.AdminIPAllowlistMiddleware",
+    "apps.accounts.middleware.session_fingerprint.SessionFingerprintMiddleware",
+    "apps.core.middleware.security_headers.SecurityHeadersMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

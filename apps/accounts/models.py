@@ -120,6 +120,10 @@ class VendorProfile(TimeStampedModel):
     status        = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
     tagline       = models.CharField(max_length=160, blank=True)
     website       = models.URLField(blank=True)
+    about         = models.TextField(max_length=2000, blank=True)
+    contact_phone = models.CharField(max_length=32, blank=True)
+    wizard_state  = models.JSONField(default=dict, blank=True)
+    submitted_at  = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Vendor profile"
@@ -127,6 +131,14 @@ class VendorProfile(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.business_name
+
+    @property
+    def current_step(self) -> str:
+        return (self.wizard_state or {}).get("current_step", "business")
+
+    @property
+    def completed_steps(self) -> list[str]:
+        return list((self.wizard_state or {}).get("completed_steps", []))
 
 
 class CheckTrigger(models.TextChoices):

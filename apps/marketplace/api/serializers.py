@@ -488,6 +488,8 @@ class VendorOnboardStepSerializer(serializers.Serializer):
     business_name = serializers.CharField(max_length=200, required=False)
     tagline = serializers.CharField(max_length=160, required=False, allow_blank=True)
     website = serializers.URLField(required=False, allow_blank=True)
+    contact_phone = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    about = serializers.CharField(required=False, allow_blank=True, max_length=2000)
 
     # categories — list of slugs
     categories = serializers.ListField(
@@ -495,14 +497,14 @@ class VendorOnboardStepSerializer(serializers.Serializer):
         required=False, allow_empty=True, max_length=12,
     )
 
-    # services — list of {title, category_slug, response_time_hours}
+    # services — list of {title, description, price_low, price_high, packages[], hero_url}
     services = serializers.ListField(
         child=serializers.DictField(), required=False, allow_empty=True, max_length=24,
     )
 
-    # gallery — list of URLs already uploaded
+    # gallery — list of {url, alt, caption} dicts (or plain URLs accepted)
     gallery = serializers.ListField(
-        child=serializers.URLField(), required=False, allow_empty=True, max_length=24,
+        child=serializers.JSONField(), required=False, allow_empty=True, max_length=24,
     )
 
     # publish — terms acceptance

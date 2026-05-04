@@ -232,3 +232,111 @@ export interface PostsListParams {
   limit?: number;
   cursor?: string;
 }
+
+export type ModTargetType =
+  | "post"
+  | "comment"
+  | "forum_thread"
+  | "forum_reply"
+  | "service"
+  | "lead_message"
+  | "review"
+  | "vendor_tagline";
+
+export interface QueueItem {
+  id: number;
+  target_type: ModTargetType | string;
+  target_id: number;
+  target_excerpt: string;
+  target_full_url: string;
+  reason_flag: string | null;
+  classifier_output: {
+    allowed: boolean | null;
+    categories: string[];
+    severity: number | null;
+  };
+  severity: number | null;
+  created_at: string;
+}
+
+export interface ActionTemplate {
+  slug: string;
+  label: string;
+  action: "approve" | "remove";
+  default_reason: string;
+  notify_template_id?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export interface ModeratorStats {
+  items_reviewed_30d: number;
+  items_reviewed_7d: number;
+  agreement_rate: number;
+  reversal_rate: number;
+  avg_response_minutes: number;
+  current_streak: number;
+  queue_position: number;
+  timeseries_30d: Array<{ day: string; count: number }>;
+}
+
+export interface InvestigateUserResult {
+  user: User;
+  recent_posts: Array<{
+    id: number;
+    kind: string;
+    excerpt: string;
+    created_at?: string;
+    moderation_status?: string;
+  }>;
+  recent_comments: Array<{
+    id: number;
+    kind: string;
+    excerpt: string;
+    created_at?: string;
+    moderation_status?: string;
+  }>;
+  recent_threads: Array<{ id: number; excerpt: string; moderation_status?: string }>;
+  recent_replies: Array<{ id: number; excerpt: string; moderation_status?: string }>;
+  recent_flags_against: Array<{
+    id: number;
+    reporter: Author;
+    reason_category: string;
+    reason_text: string;
+    status: string;
+    created_at: string;
+  }>;
+  recent_decisions: Array<{
+    id: number;
+    target_type: string;
+    target_id: number;
+    target_excerpt: string;
+    action: string;
+    severity: number | null;
+    moderated_at: string;
+  }>;
+  total_warnings: number;
+  last_seen: string | null;
+  account_age_days: number;
+  pattern_signals: string[];
+  post_count_24h: number;
+  recent_decision_count_30d: number;
+}
+
+export interface Escalation {
+  id: number;
+  target_type: string;
+  target_id: number;
+  target_excerpt: string;
+  severity: number | null;
+  notes: string;
+  escalated_by: Author;
+  created_at: string;
+}
+
+export interface Tag {
+  id: number;
+  slug: string;
+  name: string;
+  post_count: number;
+}

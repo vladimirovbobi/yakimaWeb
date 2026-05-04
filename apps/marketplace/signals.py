@@ -5,7 +5,7 @@ from django.dispatch import receiver
 
 from apps.moderation.tasks import moderate_content
 
-from .models import Bundle, Review, Service
+from .models import Bundle, LeadMessage, Review, Service
 
 
 @receiver(post_save, sender=Service)
@@ -29,3 +29,11 @@ def _moderate_review(sender, instance: Review, created: bool, **kwargs):  # noqa
     if created and instance.body.strip():
         ct = ContentType.objects.get_for_model(Review)
         moderate_content.delay(ct.pk, instance.pk, text_attr="body", context="review")
+
+
+@receiver(post_save, sender=LeadMessage)
+def _moderate_leadmessage(sender, instance: LeadMessage, created: bool, **kwargs):  # noqa: ANN001
+    if created and instance.body.strip():
+        ct = ContentType.objects.get_for_model(LeadMessage)
+        moderate_content.delay(ct.pk, instance.pk, text_attr="body",
+                                context="lead_message")
