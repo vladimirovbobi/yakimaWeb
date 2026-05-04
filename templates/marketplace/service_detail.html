@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}{{ service.title }} — {{ service.vendor.business_name }} on {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-7xl">
+
+    <a href="{% url 'marketplace:service_list' %}" class="text-mist hover:text-ivory text-sm">← All services</a>
+
+    <div class="mt-6 grid gap-10 lg:grid-cols-3">
+
+      {# ─── Main column ─── #}
+      <div class="lg:col-span-2 space-y-10">
+        <div x-data x-reveal>
+          <p class="label-luxe text-gold-hi">{{ service.category.depth_label }}</p>
+          <h1 class="h-display mt-3">{{ service.title }}</h1>
+          <p class="text-mist mt-3">by {{ service.vendor.business_name }}</p>
+        </div>
+
+        {% if service.hero_image %}
+          <div class="aspect-[16/9] overflow-hidden rounded-lg bg-warm">
+            <img src="{{ service.hero_image.url }}" alt="" class="w-full h-full object-cover">
+          </div>
+        {% endif %}
+
+        <div class="prose-yw">
+          <p>{{ service.description|linebreaksbr }}</p>
+        </div>
+
+        {# ─── Packages ─── #}
+        {% if packages %}
+          <div x-data x-reveal:100>
+            <h2 class="h-section">Packages</h2>
+            <div class="mt-6 grid gap-4 md:grid-cols-3">
+              {% for p in packages %}
+                <div class="surface p-6 flex flex-col {% if p.tier == 'standard' %}border-gold/40 shadow-gold-glow{% endif %}">
+                  <p class="label-luxe">{{ p.get_tier_display }}</p>
+                  <h3 class="h-card mt-2">{{ p.name }}</h3>
+                  <p class="font-serif text-3xl text-gold mt-3">
+                    ${{ p.price_low|floatformat:"0" }}{% if p.price_high != p.price_low %}–{{ p.price_high|floatformat:"0" }}{% endif %}
+                  </p>
+                  <p class="text-mist text-sm mt-3 leading-relaxed">{{ p.description }}</p>
+                  <ul class="mt-4 space-y-2 text-sm text-mist">
+                    {% for f in p.features %}<li class="flex gap-2"><span class="text-gold">✓</span>{{ f }}</li>{% endfor %}
+                  </ul>
+                  <p class="text-xs text-dim mt-4">Delivers in {{ p.delivery_days }} days · {{ p.revisions }} revision{{ p.revisions|pluralize }}</p>
+                  {% if user.is_authenticated %}
+                    <button form="lead-form" name="package_id" value="{{ p.pk }}"
+                            class="btn-{% if p.tier == 'standard' %}gold{% else %}outline{% endif %} btn-md mt-5 w-full">
+                      Request quote
+                    </button>
+                  {% else %}
+                    <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn-outline btn-md mt-5 w-full text-center">Sign in to inquire</a>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        {# ─── Reviews ─── #}
+        {% if reviews %}
+          <div x-data x-reveal:200>
+            <h2 class="h-section">Reviews</h2>
+            <ul class="mt-6 space-y-4">
+              {% for lead in reviews %}
+                {% with r=lead.review %}
+                <li class="surface p-6">
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <span class="text-gold">{% for _ in "x"|center:r.rating %}★{% endfor %}<span class="text-gold-dim">{% for _ in "x"|center:5 %}{% if forloop.counter > r.rating %}★{% endif %}{% endfor %}</span></span>
+                      <span class="text-mist text-sm ml-2">{{ lead.buyer.get_full_name }}</span>
+                    </div>
+                    <span class="text-xs text-dim">{{ r.created_at|timesince }} ago</span>
+                  </div>
+                  <p class="mt-3 text-mist">{{ r.body }}</p>
+                  {% if r.vendor_response %}
+                    <div class="mt-4 pl-4 border-l-2 border-gold/30">
+                      <p class="label-luxe">Vendor response</p>
+                      <p class="text-mist text-sm mt-1">{{ r.vendor_response }}</p>
+                    </div>
+                  {% endif %}
+                </li>
+                {% endwith %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+
+      {# ─── Sidebar ─── #}
+      <aside class="space-y-6">
+        <div x-data x-reveal:100 class="surface p-6 sticky top-24">
+          <p class="label-luxe">{{ service.vendor.business_name }}</p>
+          <h3 class="h-card mt-2">{{ service.vendor.user.get_full_name }}</h3>
+          {% if service.vendor.tagline %}<p class="text-mist text-sm mt-2">{{ service.vendor.tagline }}</p>{% endif %}
+
+          <ul class="mt-4 space-y-2 text-sm text-mist border-t border-gold/10 pt-4">
+            <li>Responds in ~{{ service.response_time_hours }}h</li>
+            <li>{{ service.vendor.leads.count }} leads handled</li>
+            {% if service.vendor.website %}<li><a href="{{ service.vendor.website }}" class="text-gold-hi underline" rel="noopener" target="_blank">Website</a></li>{% endif %}
+          </ul>
+
+          {% if user.is_authenticated %}
+            <form id="lead-form" method="post" action="{% url 'marketplace:lead_create' slug=service.slug %}" class="mt-5">
+              {% csrf_token %}
+              <textarea name="message" rows="4" required maxlength="2000"
+                        placeholder="Tell the vendor what you need…"
+                        class="input"></textarea>
+              <button type="submit" class="btn-gold btn-md mt-3 w-full">Send inquiry</button>
+              <p class="text-xs text-dim mt-2 text-center">Lead-gen only — vendor will reach out directly.</p>
+            </form>
+          {% else %}
+            <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn-gold btn-md w-full mt-5 text-center">Sign in to inquire</a>
+          {% endif %}
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

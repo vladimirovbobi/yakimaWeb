@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Block staff surfaces
+Disallow: /admin/
+Disallow: /ops/
+Disallow: /accounts/
+
+# Block search-noisy paginations later
+Disallow: /*?sort=*
+Disallow: /*?type=*
+
+# Sitemap (Cloudflare-fronted host overrides via env)
+Sitemap: https://yakimaweb.com/sitemap.xml

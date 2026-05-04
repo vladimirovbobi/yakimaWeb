@@ -61,6 +61,11 @@ LOCAL_APPS = [
     "apps.moderation",
     "apps.audit",
     "apps.admin_tools",
+    "apps.content",
+    "apps.tools",
+    "apps.forum",
+    "apps.marketplace",
+    "apps.operations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

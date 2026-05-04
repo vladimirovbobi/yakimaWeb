@@ -11,7 +11,7 @@ class UserAdmin(DjangoUserAdmin):
     list_display  = ("email", "role", "is_realtor", "is_vendor", "is_staff", "is_active", "created_at", "last_seen")
     list_filter   = ("role", "is_realtor", "is_vendor", "is_staff", "is_active")
     search_fields = ("email", "full_name")
-    readonly_fields = ("created_at", "updated_at", "last_seen", "last_login", "date_joined")
+    readonly_fields = ("created_at", "updated_at", "last_seen", "last_login")
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
@@ -21,6 +21,7 @@ class UserAdmin(DjangoUserAdmin):
                                              "groups", "user_permissions")}),
         ("Audit", {"fields": ("created_at", "updated_at", "last_seen", "last_login")}),
     )
+    filter_horizontal = ("groups", "user_permissions")
     add_fieldsets = (
         (None, {"classes": ("wide",), "fields": ("email", "password1", "password2")}),
     )

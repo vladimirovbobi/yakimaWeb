@@ -179,17 +179,32 @@ Alert thresholds (configure in vendor dashboards):
 
 ---
 
+## Secret rotation schedule
+
+| Secret | Rotate every | Where set | Notes |
+|---|---|---|---|
+| `DJANGO_SECRET_KEY` | annually + on staff offboarding | Railway env | All sessions invalidated on rotation |
+| `ARELLO_API_KEY` | annually + on incident | Railway env + ARELLO portal | Rotate via support email |
+| `GEMINI_API_KEY` | quarterly | Google Cloud Console | Multiple keys per project; rotate one at a time, validate, retire old |
+| `POSTMARK_SERVER_TOKEN` | annually | Postmark dashboard | Note the previous token retains send capability for 24h after rotation |
+| `AWS_SECRET_ACCESS_KEY` (R2) | quarterly | Cloudflare R2 dashboard | Use scoped credentials |
+| Database password | annually | Railway add-on console | Triggers rolling restart |
+| `SENTRY_DSN` | only on incident | Sentry org settings | Rotate after any leak |
+
 ## Phase status
 
 - [x] Phase 0: Research & Reference docs
-- [ ] Phase 1: Foundation — IN PROGRESS
-- [ ] Phase 2: Content System
-- [ ] Phase 3: AI Lead Magnets
-- [ ] Phase 4: Forum
-- [ ] Phase 5: Marketplace
-- [ ] Phase 6: Control Surfaces
-- [ ] Phase 7: Social Integration
-- [ ] Phase 8: Production Polish
+- [x] Phase 1: Foundation — DONE
+- [x] Phase 2: Content System — scaffold + tests
+- [x] Phase 3: AI Lead Magnets — description writer wired, furniture remover stub
+- [x] Phase 4: Forum — full Reddit-shape scaffold + voting tests
+- [x] Phase 5: Marketplace — full data model + service/lead UI + tests
+- [x] Phase 6: Control Surfaces — operator dashboard + mod queue
+- [x] Phase 7: Social Integration — SocialEmbed + YouTube/Instagram resolver
+- [x] Phase 8: Production Polish — sitemap + robots + final security review
+
+**Final state**: 86 tests passing, prod `check --deploy` clean, all migrations applied,
+9 apps live. See `docs/SECURITY-FINAL.md` for outstanding follow-ups by phase.
 
 See `.planning/phases/phase-N-<name>/PLAN.md` for each phase's detailed plan.
 Master plan: `C:\Users\vladi\.claude\plans\create-a-local-real-tranquil-koala.md`

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Marketplace — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page">
+    <div x-data x-reveal>
+      <p class="label-luxe text-gold-hi">Marketplace</p>
+      <h1 class="h-page mt-3">Trusted Central Washington services.</h1>
+      <p class="mt-4 text-mist text-lg max-w-2xl">
+        Photographers, lenders, junk removal, 3D tours, AI agents, automation —
+        every vendor here serves Yakima and the surrounding counties.
+      </p>
+    </div>
+
+    {# ─── Search + filter bar ─── #}
+    <form method="get" class="mt-8 flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+      <input type="search" name="q" value="{{ q }}" placeholder="Search services…"
+             class="input flex-1">
+      <select name="category" class="input md:max-w-xs">
+        <option value="">All categories</option>
+        {% for c in categories %}
+          <option value="{{ c.slug }}" {% if active_category == c.slug %}selected{% endif %}>{{ c.label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn-gold btn-md">Search</button>
+    </form>
+
+    {% if services %}
+      <div x-data x-reveal-stagger class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {% for s in services %}
+          <a href="{{ s.get_absolute_url }}" class="surface surface-hover group block overflow-hidden">
+            <div class="aspect-[4/3] overflow-hidden bg-warm">
+              {% if s.hero_image %}
+                <img src="{{ s.hero_image.url }}" alt=""
+                     class="w-full h-full object-cover group-hover:scale-[1.04]
+                            transition-transform duration-[1400ms] ease-luxe" loading="lazy">
+              {% else %}
+                <div class="w-full h-full flex items-center justify-center text-gold-dim font-serif text-3xl">
+                  {{ s.title|first|upper }}
+                </div>
+              {% endif %}
+            </div>
+            <div class="p-5 space-y-2">
+              <p class="label-luxe">{{ s.category.label }}</p>
+              <h2 class="font-serif text-lg text-ivory group-hover:text-gold-hi transition-colors line-clamp-2">{{ s.title }}</h2>
+              <p class="text-mist text-xs">{{ s.vendor.business_name }}</p>
+              {% if s.price_from %}
+                <p class="font-serif text-gold mt-2">From ${{ s.price_from|floatformat:"0" }}</p>
+              {% endif %}
+              <p class="text-xs text-dim">Responds in ~{{ s.response_time_hours }}h</p>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div x-data x-reveal:200 class="mt-12 surface p-10 text-center">
+        <p class="label-luxe">No services match yet</p>
+        <h2 class="h-card mt-3">Marketplace launches in Phase 5.</h2>
+        <p class="text-mist text-sm mt-3">Vendors: drop us a line at hello@yakimaweb.com to be early.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

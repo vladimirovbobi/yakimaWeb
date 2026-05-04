@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Generated description — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-3xl">
+    <div x-data x-reveal>
+      <p class="label-luxe text-gold-hi">Result</p>
+      <h1 class="h-page mt-3">{{ usage.tool.name }}</h1>
+    </div>
+
+    <div id="status-card"
+         {% if usage.status in 'queued running'|split %}
+           hx-get="{% url 'tools:description_writer_result' pk=usage.pk %}"
+           hx-trigger="every 3s"
+           hx-swap="outerHTML"
+         {% endif %}>
+      {% include "tools/_description_partial.html" %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -12,8 +12,20 @@ log = logging.getLogger(__name__)
 
 # Models we audit on every write. Add to this list as new models ship.
 AUDITED_MODELS = {
-    "accounts.User", "accounts.RealtorProfile", "accounts.VendorProfile",
-    "accounts.LicenseCheck", "moderation.ModerationDecision", "moderation.Flag",
+    # accounts
+    "accounts.User", "accounts.RealtorProfile", "accounts.VendorProfile", "accounts.LicenseCheck",
+    # moderation
+    "moderation.ModerationDecision", "moderation.Flag",
+    # content
+    "content.Post", "content.Comment", "content.NewsletterSubscription", "content.SocialEmbed",
+    # tools
+    "tools.Tool", "tools.ToolUsage",
+    # forum
+    "forum.Flair", "forum.ForumThread", "forum.ForumReply", "forum.Vote",
+    # marketplace
+    "marketplace.Category", "marketplace.Service", "marketplace.Package",
+    "marketplace.Bundle", "marketplace.BundleItem", "marketplace.Lead",
+    "marketplace.LeadMessage", "marketplace.Review",
 }
 
 

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Community — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page">
+
+    <div x-data x-reveal class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <p class="label-luxe text-gold-hi">Community</p>
+        <h1 class="h-page mt-3">Questions, threads, knowledge.</h1>
+      </div>
+      {% if user.is_authenticated %}
+        <a href="{% url 'forum:thread_create' %}" class="btn-gold btn-md self-start">+ New thread</a>
+      {% else %}
+        <a href="{% url 'account_login' %}" class="btn-outline btn-md self-start">Sign in to post</a>
+      {% endif %}
+    </div>
+
+    {# ─── Sort + flair filters ─── #}
+    <div class="mt-8 flex items-center justify-between flex-wrap gap-4 border-b border-gold/14 pb-4">
+      <div class="flex gap-2">
+        <a href="?sort=hot{% if active_flair %}&flair={{ active_flair }}{% endif %}"
+           class="btn-{% if sort == 'hot' %}gold{% else %}ghost{% endif %} btn-sm">Hot</a>
+        <a href="?sort=new{% if active_flair %}&flair={{ active_flair }}{% endif %}"
+           class="btn-{% if sort == 'new' %}gold{% else %}ghost{% endif %} btn-sm">New</a>
+        <a href="?sort=top{% if active_flair %}&flair={{ active_flair }}{% endif %}"
+           class="btn-{% if sort == 'top' %}gold{% else %}ghost{% endif %} btn-sm">Top</a>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <a href="?sort={{ sort }}" class="btn-{% if not active_flair %}gold{% else %}ghost{% endif %} btn-sm">All</a>
+        {% for f in flairs %}
+          <a href="?sort={{ sort }}&flair={{ f.slug }}"
+             class="btn-{% if active_flair == f.slug %}gold{% else %}ghost{% endif %} btn-sm">{{ f.label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if threads %}
+      <ul x-data x-reveal-stagger class="mt-6 space-y-3">
+        {% for t in threads %}
+          <li class="surface surface-hover">
+            <div class="p-5 flex gap-4 items-start">
+              {# Score column #}
+              <div class="flex flex-col items-center text-center min-w-[44px]">
+                <div class="text-gold font-serif text-xl">{{ t.score|default:0 }}</div>
+                <div class="text-xs text-dim">votes</div>
+              </div>
+
+              {# Body column #}
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="badge-gold text-xs">{{ t.flair.label }}</span>
+                  {% if t.pinned %}<span class="label-luxe text-gold-hi">Pinned</span>{% endif %}
+                </div>
+                <a href="{{ t.get_absolute_url }}" class="block mt-2 group">
+                  <h2 class="font-serif text-xl text-ivory group-hover:text-gold-hi transition-colors">{{ t.title }}</h2>
+                </a>
+                <p class="text-mist text-sm mt-2 line-clamp-2">{{ t.body }}</p>
+                <p class="text-xs text-dim mt-3">
+                  {{ t.author.get_full_name }}
+                  {% if t.author.is_realtor %}<span class="text-gold ml-1">·</span> Verified{% endif %}
+                  · {{ t.created_at|timesince }} ago
+                  · {{ t.reply_count }} replies
+                </p>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div x-data x-reveal:200 class="mt-12 surface p-10 text-center">
+        <p class="label-luxe">No threads yet</p>
+        <h2 class="h-card mt-3">Start the conversation.</h2>
+        {% if user.is_authenticated %}
+          <a href="{% url 'forum:thread_create' %}" class="btn-gold btn-md mt-5">Open the first thread</a>
+        {% else %}
+          <a href="{% url 'account_signup' %}" class="btn-gold btn-md mt-5">Join + post</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

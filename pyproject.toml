@@ -3,7 +3,6 @@ name = "yakimaweb"
 version = "0.1.0"
 description = "Yakima Real Estate Hub — Central WA realtor + service marketplace + community."
 requires-python = ">=3.12"
-
 dependencies = [
     "django>=5.1",
     "django-environ>=0.11",
@@ -28,10 +27,30 @@ dependencies = [
     "sentry-sdk>=2.0",
     "django-storages[boto3]>=1.14",
     "boto3>=1.34",
-    "anymail[postmark]>=12.0",
+    "django-anymail[postmark]>=12.0",
     "python-slugify>=8.0",
     "bleach>=6.1",
     "markdown>=3.7",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "apps",
+    "apps.core", "apps.core.tests",
+    "apps.accounts", "apps.accounts.services", "apps.accounts.tests",
+    "apps.moderation", "apps.moderation.services", "apps.moderation.tests",
+    "apps.audit", "apps.audit.tests",
+    "apps.admin_tools", "apps.admin_tools.tests",
+    "apps.content", "apps.content.services", "apps.content.tests",
+    "apps.tools", "apps.tools.services", "apps.tools.tests",
+    "apps.forum", "apps.forum.services", "apps.forum.tests",
+    "apps.marketplace", "apps.marketplace.services", "apps.marketplace.tests",
+    "apps.operations", "apps.operations.services", "apps.operations.tests",
+    "config", "config.settings",
 ]
 
 [dependency-groups]

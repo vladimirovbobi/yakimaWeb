@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Audit — Operations{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-7xl">
+    <div class="flex items-end justify-between gap-4">
+      <div>
+        <p class="label-luxe text-gold-hi">Audit</p>
+        <h1 class="h-page mt-3">Last 100 staff actions + accesses.</h1>
+      </div>
+      <a href="{% url 'operations:dashboard' %}" class="btn-ghost btn-sm">← Dashboard</a>
+    </div>
+
+    <div class="mt-10 grid gap-8 lg:grid-cols-2">
+
+      <div>
+        <h2 class="h-section mb-4">ActionLog (writes)</h2>
+        <div class="surface overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-warm text-mist text-xs uppercase tracking-luxe">
+              <tr><th class="text-left p-3">When</th><th class="text-left p-3">Actor</th><th class="text-left p-3">Action</th><th class="text-left p-3">Target</th><th class="text-left p-3">IP</th></tr>
+            </thead>
+            <tbody class="divide-y divide-gold/10">
+              {% for a in actions %}
+                <tr>
+                  <td class="p-3 text-dim text-xs">{{ a.created_at|date:"M j H:i" }}</td>
+                  <td class="p-3 text-mist">{{ a.actor.email|default:"system" }}</td>
+                  <td class="p-3 text-ivory">{{ a.action }}</td>
+                  <td class="p-3 text-mist">{{ a.target_type.model }} #{{ a.target_id }}</td>
+                  <td class="p-3 text-dim text-xs font-mono">{{ a.ip|default:"—" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="p-6 text-center text-mist">No actions logged yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="h-section mb-4">AccessLog (reads)</h2>
+        <div class="surface overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-warm text-mist text-xs uppercase tracking-luxe">
+              <tr><th class="text-left p-3">When</th><th class="text-left p-3">Actor</th><th class="text-left p-3">Surface</th><th class="text-left p-3">Path</th><th class="text-left p-3">Status</th></tr>
+            </thead>
+            <tbody class="divide-y divide-gold/10">
+              {% for a in accesses %}
+                <tr>
+                  <td class="p-3 text-dim text-xs">{{ a.created_at|date:"M j H:i" }}</td>
+                  <td class="p-3 text-mist">{{ a.actor.email }}</td>
+                  <td class="p-3"><span class="badge-gold text-xs">{{ a.surface }}</span></td>
+                  <td class="p-3 text-mist truncate max-w-xs">{{ a.path }}</td>
+                  <td class="p-3 text-dim text-xs">{{ a.status_code }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="p-6 text-center text-mist">No accesses logged yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

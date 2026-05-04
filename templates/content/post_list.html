@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Blog — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page">
+
+    <div x-data x-reveal class="max-w-3xl">
+      <p class="label-luxe text-gold-hi">Blog</p>
+      <h1 class="h-page mt-3">From the Hub.</h1>
+      <p class="mt-4 text-mist text-lg">
+        Posts from our team and from verified Central Washington realtors.
+      </p>
+    </div>
+
+    {# ─── Type filter pills ─── #}
+    <nav class="mt-8 flex gap-2 flex-wrap">
+      <a href="?type=" class="btn-{% if active_type == 'all' %}gold{% else %}ghost{% endif %} btn-sm">All</a>
+      <a href="?type=org" class="btn-{% if active_type == 'org' %}gold{% else %}ghost{% endif %} btn-sm">Yakima Web</a>
+      <a href="?type=blog" class="btn-{% if active_type == 'blog' %}gold{% else %}ghost{% endif %} btn-sm">Realtor blogs</a>
+    </nav>
+
+    {% if posts %}
+      <div x-data x-reveal-stagger class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% for post in posts %}
+          <a href="{{ post.get_absolute_url }}" class="surface surface-hover group block overflow-hidden">
+            {% if post.hero_image %}
+              <div class="aspect-[4/3] overflow-hidden bg-warm">
+                <img src="{{ post.hero_image.url }}" alt=""
+                     class="w-full h-full object-cover group-hover:scale-[1.04]
+                            transition-transform duration-[1400ms] ease-luxe"
+                     loading="lazy">
+              </div>
+            {% endif %}
+            <div class="p-6 space-y-3">
+              <p class="label-luxe">
+                {% if post.post_type == 'org' %}Yakima Web{% else %}Realtor blog{% endif %} ·
+                {{ post.published_at|date:"M j, Y" }}
+              </p>
+              <h2 class="h-card group-hover:text-gold-hi transition-colors line-clamp-2">{{ post.title }}</h2>
+              <p class="text-mist text-sm line-clamp-3">{{ post.excerpt }}</p>
+              <p class="text-xs text-dim">
+                by {{ post.author.get_full_name }}
+                {% if post.author.is_realtor %}<span class="ml-1 text-gold">·</span> Verified{% endif %}
+              </p>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div x-data x-reveal class="mt-12 surface p-10 text-center">
+        <p class="label-luxe">Nothing yet</p>
+        <h2 class="h-card mt-3">Stay tuned.</h2>
+        <p class="text-mist mt-3">
+          We're seeding the first posts now. Realtors:
+          <a href="{% url 'accounts:realtor_verify' %}" class="text-gold-hi underline">verify your license</a>
+          to be among the first authors.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

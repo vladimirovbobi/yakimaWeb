@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} — {{ SITE_NAME }}{% endblock %}
+{% block description %}{{ post.excerpt|default:post.title }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.excerpt|default:post.title }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% if post.hero_image %}{% block og_image %}{{ post.hero_image.url }}{% endblock %}{% endif %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{ post.title|escapejs }}",
+  "datePublished": "{{ post.published_at|date:'c' }}",
+  "dateModified": "{{ post.updated_at|date:'c' }}",
+  "author": {
+    "@type": "Person",
+    "name": "{{ post.author.get_full_name|escapejs }}"
+  },
+  "publisher": {"@type": "Organization", "name": "{{ SITE_NAME|escapejs }}"}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+{% if post.hero_image %}
+  <section class="relative aspect-[3/2] md:h-[60vh] min-h-[380px] overflow-hidden bg-black">
+    <img src="{{ post.hero_image.url }}" alt=""
+         class="absolute inset-0 w-full h-full object-cover animate-slow-zoom" fetchpriority="high">
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+    <div class="relative z-10 container-page max-w-4xl h-full flex flex-col justify-end pb-10 md:pb-16">
+      <p class="label-luxe text-gold-hi animate-fade-up">
+        {% if post.post_type == 'org' %}Yakima Web{% else %}Realtor blog{% endif %}
+        · {{ post.published_at|date:"M j, Y" }}
+      </p>
+      <h1 class="h-display drop-shadow-lg max-w-3xl mt-3 animate-fade-up [animation-delay:100ms]">
+        {{ post.title }}
+      </h1>
+    </div>
+  </section>
+{% else %}
+  <section class="section-y border-b border-gold/14">
+    <div class="container-page max-w-4xl">
+      <p class="label-luxe text-gold-hi">{% if post.post_type == 'org' %}Yakima Web{% else %}Realtor blog{% endif %}
+        · {{ post.published_at|date:"M j, Y" }}</p>
+      <h1 class="h-display mt-4">{{ post.title }}</h1>
+    </div>
+  </section>
+{% endif %}
+
+<article class="section-y">
+  <div class="container-page max-w-3xl">
+    {# Author byline #}
+    <div x-data x-reveal class="flex items-center gap-3 mb-10 pb-6 border-b border-gold/14">
+      <div class="w-12 h-12 rounded-full bg-warm border border-gold/20 overflow-hidden flex-shrink-0
+                  flex items-center justify-center text-gold font-serif text-xl">
+        {% if post.author.avatar %}<img src="{{ post.author.avatar.url }}" alt="" class="w-full h-full object-cover">
+        {% else %}{{ post.author.email|first|upper }}{% endif %}
+      </div>
+      <div>
+        <p class="text-ivory">{{ post.author.get_full_name }}
+          {% if post.author.is_realtor %}{% include "_components/_badge.html" with variant="verified" label="Verified" %}{% endif %}
+        </p>
+        <p class="text-xs text-dim">{{ post.view_count|default:0 }} reads</p>
+      </div>
+    </div>
+
+    <div x-data x-reveal:100 class="prose-yw">{{ body_html|safe }}</div>
+  </div>
+</article>
+
+<section class="section-y bg-deep border-t border-gold/14">
+  <div class="container-page max-w-3xl">
+    <h2 class="h-section">Comments</h2>
+    <p class="text-mist text-sm mt-1">{{ comments|length }} approved · all comments moderated</p>
+
+    {% if comment_form %}
+      <form method="post" action="{% url 'content:comment_create' slug=post.slug %}" class="surface mt-6 p-6">
+        {% csrf_token %}
+        {{ comment_form.body }}
+        <div class="mt-3 flex items-center justify-between">
+          <p class="text-xs text-dim">Markdown not supported in comments. Be useful, be respectful.</p>
+          <button type="submit" class="btn-gold btn-sm">Post comment</button>
+        </div>
+      </form>
+    {% else %}
+      <div class="mt-6 surface p-6 text-center">
+        <p class="text-mist">
+          <a href="{% url 'account_login' %}" class="text-gold-hi underline">Sign in</a> to comment.
+        </p>
+      </div>
+    {% endif %}
+
+    <ul class="mt-10 space-y-6">
+      {% for c in comments %}
+        <li class="surface p-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-ivory text-sm">{{ c.author.get_full_name }}</span>
+              {% if c.author.is_realtor %}{% include "_components/_badge.html" with variant="verified" label="Realtor" size="xs" %}{% endif %}
+            </div>
+            <span class="text-xs text-dim">{{ c.created_at|timesince }} ago</span>
+          </div>
+          <p class="mt-3 text-mist whitespace-pre-line">{{ c.body }}</p>
+          {% for r in c.replies.all %}
+            {% if r.moderation_status == 'approved' %}
+            <div class="mt-4 ml-6 pl-4 border-l-2 border-gold/20 space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-ivory text-sm">{{ r.author.get_full_name }}</span>
+                {% if r.author.is_realtor %}{% include "_components/_badge.html" with variant="verified" label="Realtor" size="xs" %}{% endif %}
+                <span class="text-xs text-dim">· {{ r.created_at|timesince }} ago</span>
+              </div>
+              <p class="text-mist text-sm whitespace-pre-line">{{ r.body }}</p>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </li>
+      {% empty %}
+        <li class="text-mist text-sm">No comments yet — be the first.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

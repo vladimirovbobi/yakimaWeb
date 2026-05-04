@@ -11,18 +11,72 @@ from dataclasses import dataclass, field
 
 # Injection signals — pre-flag before LLM call
 INJECTION_PATTERNS = [
-    r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions",
-    r"system\s*[:\-]",
-    r"</?(UNTRUSTED_USER_CONTENT|GUIDELINES|SYSTEM)>",
-    r"you\s+are\s+now",
-    r"pretend\s+(you\s+)?(are|that)",
-    r"jailbreak",
+    # Direct override attempts
+    r"ignore\s+(all\s+)?(previous|prior|above|prior|earlier)\s+instructions",
+    r"disregard\s+(all\s+)?(previous|prior|above)\s+instructions",
+    r"forget\s+(all\s+)?(previous|prior|above)\s+(instructions|rules)",
+    r"override\s+(previous|prior|safety|all)",
+
+    # Role / persona manipulation
+    r"\byou\s+are\s+(now|a\s+different)\b",
+    r"\bpretend\s+(you\s+)?(are|that|to\s+be)\b",
+    r"\bact\s+as\s+(if\s+)?",
+    r"\bbe\s+a\s+(different|helpful)\s+(ai|assistant|bot)\b",
+
+    # Jailbreak / mode flips
+    r"\bjailbreak\b",
     r"\bDAN\s+mode\b",
-    r"developer\s+mode",
-    r"```(json|system|instructions)",
-    r"act\s+as\s+(if\s+)?",
-    r"new\s+(rules|instructions|policy)",
-    r"override\s+(previous|prior|safety)",
+    r"\bDAN\s+\(do\s+anything\s+now\)",
+    r"\bdeveloper\s+mode\b",
+    r"\bgod\s+mode\b",
+    r"\benable\s+(developer|admin|god|debug|jailbreak)\b",
+
+    # Schema / output manipulation
+    r"\bnew\s+(rules|instructions|policy|schema)\b",
+    r"\bupdated\s+(rules|instructions|policy|schema|moderation)\b",
+    r"\buse\s+this\s+(new\s+)?schema\b",
+    r"\bmark\s+(this|it)\s+as\s+(approved|allowed|safe)\b",
+    r"\bclassify\s+(everything|all|this)\s+as\s+(allowed|approved|safe|severity\s*1)\b",
+    r"\b(allowed|action)\s*[:=]\s*[\"']?(true|approve|always_approve)",
+    r'\{[\s"]*allowed[\s"]*:[\s]*true',
+
+    # Tag / delimiter injection
+    r"</?(UNTRUSTED_USER_CONTENT|GUIDELINES|SYSTEM|INSTRUCTIONS|PROMPT)\s*>",
+    r"```(json|system|instructions|policy)",
+    r"\bsystem\s*[:\-]\s",
+
+    # Authority / social engineering
+    r"\bI\s+am\s+(the|an?)\s+(admin|administrator|moderator|developer|owner)\b",
+    r"\bI\s+authorize\s+(this|you)\b",
+    r"\b(urgent|emergency)[\s:!]+(approve|allow|process)",
+    r"\bplease[\s,]+(disregard|ignore|forget)\b",
+    r"\bkindly\s+(disregard|ignore|forget|approve)\b",
+
+    # Test / sandbox claims
+    r"\bthis\s+is\s+(just\s+)?a\s+(test|sandbox|drill)\b",
+    r"\bexpected\s+(output|response)\s+is\b",
+    r"\b(test|sandbox|debug)\s+mode\b",
+
+    # Indirect / smuggling
+    r"\btranslate\s+.*\s+and\s+(follow|execute|do)",
+    r"\bdecode\s+.*\s+(and|then)\s+(follow|execute|run)",
+    r"\bvisit\s+https?://\S+\s+and\s+(follow|do|execute)",
+    r"\b(if|when)\s+you\s+were\s+a\s+different\s+(ai|assistant|bot)",
+
+    # Injection-by-quote
+    r"\b(user|customer|admin)\s+(wrote|said|requested)[\s:]+['\"]?(ignore|disregard)",
+
+    # Step-by-step splits
+    r"step\s*\d+[\s:]+ignore\s+(prior|previous|above)",
+
+    # Metadata redefinition
+    r"\bcategor(y|ies)\s+(now\s+include|are\s+now)\b",
+
+    # Self-reference (asks to approve because it's about moderation)
+    r"\bapprove\s+(this|it)\s+(because|since)\s+(it.?s|its)\s+(meta|about)",
+
+    # Hash / cryptographic claims
+    r"\bif\s+(sha256|md5|hash)\s+of\b",
 ]
 
 # Zero-width / RTL / homoglyph attacks

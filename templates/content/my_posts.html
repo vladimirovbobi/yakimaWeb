@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}My posts — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page max-w-4xl">
+
+    <div x-data x-reveal class="flex items-center justify-between gap-4">
+      <div>
+        <p class="label-luxe text-gold-hi">My posts</p>
+        <h1 class="h-page mt-3">Drafts + published.</h1>
+      </div>
+      {% if user.is_realtor %}
+        <a href="{% url 'content:post_author' %}" class="btn-gold btn-md">+ New post</a>
+      {% endif %}
+    </div>
+
+    {% if posts %}
+      <ul x-data x-reveal-stagger class="mt-10 space-y-3">
+        {% for p in posts %}
+          <li class="surface p-5 flex items-center justify-between gap-4">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                {% if p.status == 'published' %}
+                  {% include "_components/_badge.html" with variant="verified" label="Published" %}
+                {% else %}
+                  {% include "_components/_badge.html" with variant="pending" label=p.get_status_display %}
+                {% endif %}
+                {% if p.moderation_status != 'approved' %}
+                  {% include "_components/_badge.html" with variant="pending" label=p.get_moderation_status_display %}
+                {% endif %}
+              </div>
+              <a href="{{ p.get_absolute_url }}" class="text-ivory hover:text-gold-hi transition-colors block truncate">
+                {{ p.title }}
+              </a>
+              <p class="text-xs text-dim mt-1">
+                {{ p.view_count|default:0 }} reads · {{ p.created_at|date:"M j, Y" }}
+              </p>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div x-data x-reveal:200 class="surface mt-10 p-10 text-center">
+        <p class="label-luxe">No posts yet</p>
+        <h2 class="h-card mt-3">Write your first.</h2>
+        {% if user.is_realtor %}
+          <a href="{% url 'content:post_author' %}" class="btn-gold btn-md mt-5">Start writing</a>
+        {% else %}
+          <p class="text-mist text-sm mt-3">Verify your WA license to author blog posts.</p>
+          <a href="{% url 'accounts:realtor_verify' %}" class="btn-outline btn-md mt-5">Get verified</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

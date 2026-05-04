@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Videos — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="section-y">
+  <div class="container-page">
+    <div x-data x-reveal class="max-w-3xl">
+      <p class="label-luxe text-gold-hi">Watch</p>
+      <h1 class="h-page mt-3">Yakima Web on YouTube + Instagram.</h1>
+      <p class="mt-4 text-mist text-lg">
+        Market explainers, vendor spotlights, neighborhood walkthroughs.
+      </p>
+    </div>
+
+    {% if items %}
+      <div x-data x-reveal-stagger class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {% for it in items %}
+          <article class="surface overflow-hidden">
+            <div class="aspect-video bg-warm">
+              {{ it.embed_html|safe }}
+            </div>
+            <div class="p-5 space-y-2">
+              <span class="badge-gold text-xs">{{ it.get_provider_display }} · {{ it.get_kind_display }}</span>
+              {% if it.title %}<h2 class="font-serif text-lg text-ivory">{{ it.title }}</h2>{% endif %}
+              {% if it.description %}<p class="text-mist text-sm line-clamp-2">{{ it.description }}</p>{% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div x-data x-reveal:200 class="mt-12 surface p-10 text-center">
+        <p class="label-luxe">Nothing yet</p>
+        <h2 class="h-card mt-3">Videos land here.</h2>
+        <p class="text-mist text-sm mt-3">Staff: paste a YouTube/Instagram URL in admin → it auto-resolves.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
