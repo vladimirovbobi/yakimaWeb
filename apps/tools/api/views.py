@@ -1,16 +1,23 @@
-"""Tools API views — public meta + private run dispatch + task-status polling."""
+"""Tools API views — public meta + private run dispatch + task-status polling + SSE."""
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.http import StreamingHttpResponse
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.core.api.throttling import AIToolThrottle
 
 from ..models import Tool, ToolUsage, UsageStatus
 from ..services.rate_limit import check_and_consume
+from ..services.sse import stream_task_status
 from .serializers import (
     DescriptionWriterRequestSerializer,
     DescriptionWriterResponseSerializer,
@@ -167,6 +174,16 @@ class FurnitureRemoverRunView(generics.GenericAPIView):
         _enforce_rate_limit(request.user, tool)
 
         image = ser.validated_data["image"]
+        # Stage the upload bytes in default_storage so the img-worker can pick
+        # them up. We keep the path narrow: tools/furniture-remover/<uid>/uploads/...
+        ts = timezone.now().strftime("%Y%m%dT%H%M%S")
+        suffix = uuid.uuid4().hex[:8]
+        ext = (image.name.rsplit(".", 1)[-1] or "jpg").lower()
+        if ext not in {"jpg", "jpeg", "png"}:
+            ext = "jpg"
+        upload_path = f"tools/furniture-remover/{request.user.id}/uploads/{ts}-{suffix}.{ext}"
+        default_storage.save(upload_path, ContentFile(image.read()))
+
         usage = ToolUsage.objects.create(
             user=request.user,
             tool=tool,
@@ -174,27 +191,28 @@ class FurnitureRemoverRunView(generics.GenericAPIView):
                 "filename": image.name,
                 "size": image.size,
                 "preserve_layout": ser.validated_data["preserve_layout"],
+                "upload_path": upload_path,
             },
         )
 
-        # TODO: wire `apps.tools.tasks.run_furniture_remover` (Phase 3 — port from
-        # virtual-staging-app). For now we stage the upload bytes inside input_meta
-        # and let the Phase-3 task pick it up.
-        try:
-            from apps.tools.tasks import run_furniture_remover  # type: ignore[attr-defined]
-        except ImportError:
-            run_furniture_remover = None
-        if run_furniture_remover is not None:
-            run_furniture_remover.delay(usage.pk)
+        from apps.tools.tasks import run_furniture_remover
+        run_furniture_remover.delay(usage.pk)
 
         body = {
             "task_id": usage.pk,
             "status": UsageStatus.QUEUED,
-            "original_url": None,
+            "original_url": _safe_storage_url(upload_path),
             "result_url": None,
         }
         return Response(FurnitureRemoverResponseSerializer(body).data,
                         status=status.HTTP_202_ACCEPTED)
+
+
+def _safe_storage_url(path: str) -> str | None:
+    try:
+        return default_storage.url(path)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -210,3 +228,27 @@ class ToolTaskStatusView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return ToolUsage.objects.filter(user=self.request.user).select_related("tool")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Server-Sent Events stream — task progress
+# ──────────────────────────────────────────────────────────────────────────
+class ToolTaskStreamView(APIView):
+    """GET /api/v1/streams/tools/<task_id>/ — owner-only SSE channel."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, task_id: int):
+        # Pre-flight ownership so we 404/403 fast before opening the stream.
+        owned = ToolUsage.objects.filter(pk=task_id, user=request.user).exists()
+        if not owned:
+            raise NotFound("Task not found.")
+
+        response = StreamingHttpResponse(
+            stream_task_status(task_id, owner_id=request.user.id),
+            content_type="text/event-stream",
+        )
+        response["Cache-Control"] = "no-cache, no-transform"
+        response["X-Accel-Buffering"] = "no"  # Caddy/nginx: do not buffer
+        response["Connection"] = "keep-alive"
+        return response

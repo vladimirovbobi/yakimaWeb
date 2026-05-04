@@ -112,10 +112,14 @@ class ToolTaskStatusSerializer(serializers.ModelSerializer):
         if obj.status != "success":
             return None
         meta = obj.output_meta or {}
+        in_meta = obj.input_meta or {}
         # Keep the public-facing payload narrow; bare-bones for now.
         return {
             "text": meta.get("text"),
             "url": meta.get("url"),
+            "input_url": meta.get("input_url") or in_meta.get("image_url"),
+            "cost_usd": float(obj.cost_usd or 0),
+            "runtime_ms": obj.duration_ms or 0,
         }
 
     def get_completed_at(self, obj: ToolUsage):

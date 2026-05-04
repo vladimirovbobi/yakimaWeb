@@ -3,16 +3,24 @@ import logging
 import time
 
 from celery import shared_task
+from django.core.files.storage import default_storage
 
 from apps.moderation.services.pipeline import moderate
 
 from .models import ToolUsage, UsageStatus
 from .services.description_writer import generate as gen_description
+from .services.furniture_remover import (
+    FurnitureRemoverError,
+    run as run_furniture,
+)
 from .services.spend_cap import SpendCapExceeded, check_budget, record_spend_usd
 
 log = logging.getLogger(__name__)
 
 
+# ──────────────────────────────────────────────────────────────────────────
+# Description writer (Sprint 2)
+# ──────────────────────────────────────────────────────────────────────────
 @shared_task(bind=True, max_retries=2, retry_backoff=True)
 def run_description_writer(self, usage_id: int) -> str:
     """Pull ToolUsage row, run moderation on input, call Gemini, persist output."""
@@ -77,3 +85,74 @@ def run_description_writer(self, usage_id: int) -> str:
     except Exception:  # noqa: BLE001
         log.exception("spend_cap.record_spend_usd failed (non-fatal)")
     return "success"
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Furniture remover (Sprint 3)
+# ──────────────────────────────────────────────────────────────────────────
+@shared_task(bind=True, max_retries=3, queue="images")
+def run_furniture_remover(self, usage_id: int) -> dict:
+    """Image-queue task — runs on the dedicated img-worker container.
+
+    Reads the staged input image from default_storage (path stored on the
+    ToolUsage row), then delegates to the service which performs spend-cap +
+    image-moderation pre-flight and the two Gemini calls. Retries with
+    exponential backoff on transient errors.
+    """
+    usage = ToolUsage.objects.select_related("tool", "user").filter(pk=usage_id).first()
+    if usage is None:
+        return {"status": "missing"}
+
+    image_path = (usage.input_meta or {}).get("upload_path")
+    if not image_path:
+        usage.status = UsageStatus.FAILED
+        usage.error = "no upload path on ToolUsage"
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "no_upload_path"}
+
+    try:
+        with default_storage.open(image_path, "rb") as f:
+            image_bytes = f.read()
+    except Exception as exc:  # noqa: BLE001
+        log.exception("failed to read uploaded image")
+        usage.status = UsageStatus.FAILED
+        usage.error = f"read_failed:{exc}"[:500]
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "read_failed"}
+
+    try:
+        result = run_furniture(usage, image_bytes)
+    except SpendCapExceeded as exc:
+        usage.status = UsageStatus.BLOCKED
+        usage.block_reason = "spend_cap_exceeded"
+        usage.error = str(exc)[:500]
+        usage.save(update_fields=["status", "block_reason", "error", "updated_at"])
+        return {"status": "blocked", "block_reason": "spend_cap_exceeded"}
+    except FurnitureRemoverError as exc:
+        log.warning("furniture remover transient error: %s", exc)
+        try:
+            countdown = 30 * (2 ** self.request.retries)
+            raise self.retry(exc=exc, countdown=countdown)
+        except self.MaxRetriesExceededError:
+            usage.status = UsageStatus.FAILED
+            usage.error = str(exc)[:500]
+            usage.save(update_fields=["status", "error", "updated_at"])
+            return {"status": "failed", "error": "max_retries"}
+    except Exception as exc:  # noqa: BLE001
+        log.exception("furniture remover unexpected error")
+        usage.status = UsageStatus.FAILED
+        usage.error = str(exc)[:500]
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "unhandled"}
+
+    return {
+        "status": result.status,
+        "input_url": result.input_url,
+        "output_url": result.output_url,
+        "tokens_in": result.tokens_in,
+        "tokens_out": result.tokens_out,
+        "cost_usd": float(result.cost_usd),
+        "runtime_ms": result.runtime_ms,
+        "block_reason": result.block_reason,
+        "error": result.error,
+    }
