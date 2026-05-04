@@ -1,0 +1,10 @@
+{{ site_name }} — your daily summary
+
+You have {{ total_unread }} new notification{{ total_unread|pluralize }}.
+
+{% for n in notes %}
+- {{ n.get_kind_display }}: {{ n.title }}
+  {{ n.link }}
+{% endfor %}
+
+Open your inbox: /dashboard/notifications

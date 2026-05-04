@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{ site_name }} — your daily summary</title>
+<style>
+  body { background:#0D0904; color:#F5EFE0; font-family:Georgia, serif; padding:24px; }
+  .panel { max-width:560px; margin:0 auto; background:#141008; border:1px solid #5A4A28; padding:32px; }
+  h1 { color:#DEC98A; font-size:24px; margin:0 0 16px; }
+  .row { padding:12px 0; border-bottom:1px solid #1A1208; }
+  .row a { color:#BFA06A; text-decoration:none; }
+  .label { text-transform:uppercase; letter-spacing:0.18em; font-size:11px; color:#706450; }
+  .body  { color:#CEC4A8; font-size:14px; margin-top:4px; }
+  .cta a { display:inline-block; padding:10px 22px; background:#BFA06A; color:#0D0904;
+           text-decoration:none; margin-top:18px; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <h1>You have {{ total_unread }} new {% if total_unread == 1 %}notification{% else %}notifications{% endif %}</h1>
+    <p class="body">Catch up on activity since your last visit.</p>
+    {% for n in notes %}
+      <div class="row">
+        <div class="label">{{ n.get_kind_display }}</div>
+        <div><a href="{{ n.link }}">{{ n.title }}</a></div>
+        {% if n.body %}<div class="body">{{ n.body }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="cta">
+      <a href="/dashboard/notifications">Open inbox</a>
+    </div>
+  </div>
+</body>
+</html>
