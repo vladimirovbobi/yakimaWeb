@@ -12,3 +12,19 @@ class LeadThrottle(UserRateThrottle):
 
 class AIToolThrottle(UserRateThrottle):
     scope = "ai_tool"
+
+
+class CommentThrottle(UserRateThrottle):
+    scope = "comment"
+
+
+class ForumWriteThrottle(UserRateThrottle):
+    scope = "forum_write"
+
+
+class FlagThrottle(UserRateThrottle):
+    scope = "flag"
+
+
+class MessageThrottle(UserRateThrottle):
+    scope = "message"

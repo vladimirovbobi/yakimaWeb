@@ -10,6 +10,7 @@ from treebeard.mp_tree import MP_Node
 
 from apps.accounts.models import VendorProfile
 from apps.core.models import TimeStampedModel
+from apps.core.validators import MaxFileSizeValidator
 from apps.moderation.models import ModeratableMixin
 
 
@@ -36,7 +37,10 @@ class Service(ModeratableMixin, TimeStampedModel):
     title       = models.CharField(max_length=140)
     slug        = models.SlugField(max_length=160, unique=True, blank=True)
     description = models.TextField(max_length=4000)
-    hero_image  = models.ImageField(upload_to="marketplace/services/", null=True, blank=True)
+    hero_image  = models.ImageField(
+        upload_to="marketplace/services/", null=True, blank=True,
+        validators=[MaxFileSizeValidator(10)],
+    )
     response_time_hours = models.PositiveIntegerField(default=24,
                                                       help_text="Promised response time")
     is_active   = models.BooleanField(default=True, db_index=True)

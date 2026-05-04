@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import TimeStampedModel
+from apps.core.validators import MaxFileSizeValidator
 from .managers import UserManager
 
 
@@ -21,7 +22,10 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     email      = models.EmailField(_("email"), unique=True, db_index=True)
     full_name  = models.CharField(_("full name"), max_length=200, blank=True)
-    avatar     = models.ImageField(upload_to="avatars/", null=True, blank=True)
+    avatar     = models.ImageField(
+        upload_to="avatars/", null=True, blank=True,
+        validators=[MaxFileSizeValidator(5)],
+    )
 
     role       = models.CharField(max_length=12, choices=Role.choices, default=Role.MEMBER)
     is_realtor = models.BooleanField(default=False, db_index=True)
@@ -83,7 +87,10 @@ class RealtorProfile(TimeStampedModel):
     verified_at     = models.DateTimeField(null=True, blank=True)
     license_expires = models.DateField(null=True, blank=True)
     brokerage       = models.CharField(max_length=200, blank=True)
-    headshot        = models.ImageField(upload_to="realtors/", null=True, blank=True)
+    headshot        = models.ImageField(
+        upload_to="realtors/", null=True, blank=True,
+        validators=[MaxFileSizeValidator(5)],
+    )
     bio             = models.TextField(max_length=2000, blank=True)
     phone           = models.CharField(max_length=20, blank=True)
 

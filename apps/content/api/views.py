@@ -16,6 +16,7 @@ from apps.content.models import (
 )
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsOwnerOrReadOnly, IsRealtor
+from apps.core.api.throttling import CommentThrottle
 
 from .serializers import (
     CommentCreateSerializer,
@@ -180,6 +181,7 @@ class CommentCreateView(generics.CreateAPIView):
 
     serializer_class   = CommentCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes   = [CommentThrottle]
 
     def get_serializer_context(self):
         ctx  = super().get_serializer_context()

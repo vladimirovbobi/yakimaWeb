@@ -6,8 +6,9 @@ from celery import shared_task
 
 from apps.moderation.services.pipeline import moderate
 
-from .models import Tool, ToolUsage, UsageStatus
+from .models import ToolUsage, UsageStatus
 from .services.description_writer import generate as gen_description
+from .services.spend_cap import SpendCapExceeded, check_budget, record_spend_usd
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +30,17 @@ def run_description_writer(self, usage_id: int) -> str:
         usage.error = "Input flagged by moderation."
         usage.save(update_fields=["status", "block_reason", "error", "updated_at"])
         return "blocked_input"
+
+    # Spend cap pre-flight: bail out cheaply if today's budget is gone.
+    try:
+        check_budget()
+    except SpendCapExceeded as exc:
+        usage.status = UsageStatus.BLOCKED
+        usage.block_reason = "spend_cap_exceeded"
+        usage.error = str(exc)[:500]
+        usage.cost_usd = 0
+        usage.save(update_fields=["status", "block_reason", "error", "cost_usd", "updated_at"])
+        return "blocked_spend_cap"
 
     usage.status = UsageStatus.RUNNING
     usage.save(update_fields=["status", "updated_at"])
@@ -59,4 +71,9 @@ def run_description_writer(self, usage_id: int) -> str:
     usage.cost_usd = round((result.tokens_in / 1e6 * 1.25) + (result.tokens_out / 1e6 * 5.0), 4)
     usage.duration_ms = int((time.time() - t0) * 1000)
     usage.save()
+    # Increment today's running cost so subsequent runs see the latest total.
+    try:
+        record_spend_usd(float(usage.cost_usd))
+    except Exception:  # noqa: BLE001
+        log.exception("spend_cap.record_spend_usd failed (non-fatal)")
     return "success"

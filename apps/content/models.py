@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import TimeStampedModel
+from apps.core.validators import MaxFileSizeValidator
 from apps.moderation.models import ModeratableMixin
 
 
@@ -35,7 +36,10 @@ class Post(ModeratableMixin, TimeStampedModel):
     excerpt    = models.CharField(max_length=300, blank=True,
                                   help_text="Shown on cards + meta description.")
     body       = models.TextField(help_text="Markdown — will be sanitized.")
-    hero_image = models.ImageField(upload_to="content/hero/", null=True, blank=True)
+    hero_image = models.ImageField(
+        upload_to="content/hero/", null=True, blank=True,
+        validators=[MaxFileSizeValidator(10)],
+    )
     published_at = models.DateTimeField(null=True, blank=True, db_index=True)
     view_count = models.PositiveBigIntegerField(default=0)
 

@@ -35,7 +35,7 @@ from apps.accounts.models import (
     VendorProfile,
 )
 from apps.audit.models import ActionLog
-from apps.core.api.permissions import IsOperator
+from apps.core.api.permissions import IsOperator, RequiresOTP
 from apps.moderation.models import (
     ModerationAction,
     ModerationDecision,
@@ -92,7 +92,7 @@ class DashboardView(GenericAPIView):
     """GET /api/v1/ops/dashboard/ — composed metrics. Cached 30s per user."""
 
     serializer_class = OpsDashboardSerializer
-    permission_classes = (IsOperator,)
+    permission_classes = (IsOperator, RequiresOTP)
 
     @extend_schema(responses=OpsDashboardSerializer)
     def get(self, request: Request) -> Response:
@@ -225,7 +225,7 @@ class MetricCardView(GenericAPIView):
     """GET /api/v1/ops/metrics/<slug>/ — sparkline + delta for one card."""
 
     serializer_class = MetricCardSerializer
-    permission_classes = (IsOperator,)
+    permission_classes = (IsOperator, RequiresOTP)
 
     @extend_schema(responses=MetricCardSerializer)
     def get(self, request: Request, card_slug: str) -> Response:
@@ -253,7 +253,7 @@ class UserSuspendView(GenericAPIView):
     """POST /api/v1/ops/users/<int:user_id>/suspend/ — disable + Celery re-enable."""
 
     serializer_class = UserSuspendSerializer
-    permission_classes = (IsOperator,)
+    permission_classes = (IsOperator, RequiresOTP)
 
     @extend_schema(request=UserSuspendSerializer, responses=UserSuspendSerializer)
     def post(self, request: Request, user_id: int) -> Response:
@@ -313,7 +313,7 @@ class VendorStatusUpdateView(UpdateAPIView):
     """PATCH /api/v1/ops/vendors/<int:vendor_id>/ — flip status + log."""
 
     serializer_class = VendorStatusUpdateSerializer
-    permission_classes = (IsOperator,)
+    permission_classes = (IsOperator, RequiresOTP)
     queryset = VendorProfile.objects.all()
     lookup_url_kwarg = "vendor_id"
     http_method_names = ["patch", "options"]
@@ -340,7 +340,7 @@ class LicenseOverrideView(GenericAPIView):
     """POST /api/v1/ops/licenses/<int:profile_id>/override/ — manual verification flip."""
 
     serializer_class = LicenseOverrideSerializer
-    permission_classes = (IsOperator,)
+    permission_classes = (IsOperator, RequiresOTP)
 
     @extend_schema(request=LicenseOverrideSerializer, responses=LicenseOverrideSerializer)
     def post(self, request: Request, profile_id: int) -> Response:
@@ -398,7 +398,7 @@ class ContentTakedownView(GenericAPIView):
     """POST /api/v1/ops/content/takedown/ — set moderation_status='removed'."""
 
     serializer_class = ContentTakedownSerializer
-    permission_classes = (IsOperator,)
+    permission_classes = (IsOperator, RequiresOTP)
 
     @extend_schema(request=ContentTakedownSerializer, responses=ContentTakedownSerializer)
     def post(self, request: Request) -> Response:

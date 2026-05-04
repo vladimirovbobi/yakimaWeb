@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsOwnerOrReadOnly
-from apps.core.api.throttling import VoteThrottle
+from apps.core.api.throttling import ForumWriteThrottle, VoteThrottle
 from apps.forum.models import Flair, ForumReply, ForumThread, Vote
 
 from .serializers import (
@@ -105,6 +105,7 @@ class ThreadCreateView(generics.CreateAPIView):
 
     serializer_class   = ForumThreadCreateUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes   = [ForumWriteThrottle]
 
     def perform_create(self, serializer):
         flair = get_object_or_404(Flair, slug=self.kwargs["flair_slug"])
@@ -143,6 +144,7 @@ class ReplyCreateView(generics.CreateAPIView):
 
     serializer_class   = ForumReplyCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes   = [ForumWriteThrottle]
 
     def get_serializer_context(self):
         ctx    = super().get_serializer_context()

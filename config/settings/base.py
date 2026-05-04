@@ -81,6 +81,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # ─── Middleware ──────────────────────────────────────────────────────────
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -285,6 +286,10 @@ REST_FRAMEWORK = {
         "vote": "30/minute",
         "lead": "5/hour",
         "ai_tool": "10/hour",
+        "comment": "30/hour",
+        "forum_write": "30/hour",
+        "flag": "20/hour",
+        "message": "10/minute",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.core.api.exceptions.problem_detail_handler",
@@ -354,17 +359,23 @@ CSRF_COOKIE_HTTPONLY = False  # double-submit requires JS read of the cookie
 CSRF_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_SECURE = not DEBUG
 
-# Content Security Policy (django-csp)
+# Content Security Policy (django-csp).
+#
+# The Next.js frontend ships its CSS via the bundler so we don't strictly need
+# 'unsafe-inline' on style-src. We still allow it as a hedge for Tailwind JIT
+# fallbacks and Django admin until the strict-only audit lands in Sprint 6.
+# The nonce is set by `csp.middleware.CSPMiddleware` and is available in
+# Django templates as `{{ request.csp_nonce }}` and on the response header.
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_SCRIPT_SRC = ("'self'", "'strict-dynamic'")
-CSP_STYLE_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_IMG_SRC = ("'self'", "data:", "https:")
 CSP_FONT_SRC = ("'self'", "data:")
 CSP_CONNECT_SRC = ("'self'",)
 CSP_FRAME_ANCESTORS = ("'none'",)
 CSP_BASE_URI = ("'self'",)
 CSP_FORM_ACTION = ("'self'",)
-CSP_INCLUDE_NONCE_IN = ("script-src", "style-src")
+CSP_INCLUDE_NONCE_IN = ("script-src",)
 CSP_OBJECT_SRC = ("'none'",)
 
 # ─── Sentry ──────────────────────────────────────────────────────────────

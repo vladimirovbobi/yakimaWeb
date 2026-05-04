@@ -36,6 +36,7 @@ from rest_framework.response import Response
 from apps.audit.models import AccessLog, ActionLog, Surface
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsModerator
+from apps.core.api.throttling import FlagThrottle
 
 from ..models import (
     Flag,
@@ -284,6 +285,7 @@ class FlagCreateView(CreateAPIView):
 
     serializer_class = FlagCreateSerializer
     permission_classes = (IsAuthenticated,)
+    throttle_classes = (FlagThrottle,)
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         ser = self.get_serializer(data=request.data, context={"request": request})

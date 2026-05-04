@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from apps.accounts.models import VendorProfile
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsVendor
-from apps.core.api.throttling import LeadThrottle
+from apps.core.api.throttling import LeadThrottle, MessageThrottle
 
 from ..models import (
     Bundle,
@@ -579,10 +579,18 @@ class LeadStatusUpdateView(generics.UpdateAPIView):
 # Lead messages
 # ──────────────────────────────────────────────────────────────────────────
 class LeadMessageListCreateView(generics.ListCreateAPIView):
-    """GET/POST /v1/leads/<lead_id>/messages/ — party only."""
+    """GET/POST /v1/leads/<lead_id>/messages/ — party only.
+
+    Writes throttled at 10/min via MessageThrottle to keep chat civilized.
+    """
 
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = TimeCursorPagination
+
+    def get_throttles(self):
+        if self.request.method == "POST":
+            return [MessageThrottle()]
+        return super().get_throttles()
 
     def get_serializer_class(self):
         return (LeadMessageCreateSerializer if self.request.method == "POST"
