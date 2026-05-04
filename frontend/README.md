@@ -69,6 +69,48 @@ npm run test:e2e -- --project=webkit-mobile --project=chromium-mobile
 
 - `@axe-core/playwright` - required by `accessibility.spec.ts`. If absent, the a11y suite skips itself rather than failing. Install with `npm install --save-dev @axe-core/playwright`.
 
+## Brand assets
+
+All brand placeholder art lives under `frontend/public/`. Generate with:
+
+```bash
+make assets    # from repo root
+```
+
+Asset paths:
+
+| Asset | Path | Source |
+|---|---|---|
+| Wordmark logo | `public/logo.svg` | hand-authored SVG |
+| Mark only | `public/logo-mark.svg` | hand-authored SVG |
+| Favicon SVG | `public/favicon.svg` | hand-authored SVG |
+| Favicon ICO (multi-size) | `public/favicon.ico` | `scripts/generate_favicons.py` |
+| Apple touch icon | `public/apple-touch-icon.png` | `scripts/generate_favicons.py` |
+| PWA icons | `public/icon-192.png`, `public/icon-512.png` | `scripts/generate_favicons.py` |
+| Hero placeholders | `public/img/hero/hero-{home,blog,services,community,tools}.jpg` | `scripts/generate_hero_placeholders.py` |
+| Furniture remover demo | `public/img/samples/furniture-remover/{before,after}-{1,2,3}.jpg` | `scripts/generate_furniture_remover_samples.py` |
+| Empty-state illustrations | `public/img/empty/empty-{leads,posts,services,notifications,search}.svg` | hand-authored SVG |
+| OG image samples | `public/og-samples/og-{blog,marketplace,forum}.png` | `manage.py regen_og_images --demo` |
+
+CSS color tokens are exposed as both Tailwind classes (`bg-gold`, `text-ivory`)
+and CSS variables in `app/globals.css` (`--yw-gold`, `--yw-ivory`, etc.) for
+use in custom CSS and embedded iframes.
+
+### Replace before launch
+
+Every generated asset is marked with `[demo]` or a `DEMO` watermark. Swap with
+real art before going live:
+
+- [ ] Wordmark logo (final designer cut)
+- [ ] Hero photos (real Yakima Valley imagery — vineyards, riverfronts, downtown)
+- [ ] Founder / team photos for `/about`
+- [ ] Real photographer-supplied before/after pairs for the furniture-remover demo
+- [ ] Vendor avatar placeholders → real vendor headshots
+- [ ] Final OG image template review (typography, font files)
+
+Brand source of truth: `../docs/research/design-system-reference.md`.
+Voice + tone: `../docs/COPY-STYLE-GUIDE.md`.
+
 ## See also
 
 - Root: `../CLAUDE.md`

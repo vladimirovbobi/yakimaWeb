@@ -28,7 +28,7 @@ export default function ReplyComposer({ onSend }: Props) {
   }
 
   return (
-    <div className="border-t border-gold/14 pt-4">
+    <div className="border-t border-gold/14 pt-4 sm:static sticky bottom-0 bg-deep z-20 safe-bottom-tight">
       <textarea
         rows={3}
         value={body}
@@ -40,9 +40,10 @@ export default function ReplyComposer({ onSend }: Props) {
           }
         }}
         placeholder="Type your reply…"
+        aria-label="Reply message"
         className="w-full bg-warm border border-gold/22 text-ivory placeholder-dim px-4 py-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
       />
-      <div className="flex justify-between items-center mt-2">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between sm:items-center mt-2">
         <p className="text-[10px] uppercase tracking-luxe text-dim">
           Ctrl/Cmd + Enter to send
         </p>
@@ -52,6 +53,7 @@ export default function ReplyComposer({ onSend }: Props) {
           size="sm"
           loading={sending}
           onClick={send}
+          className="w-full sm:w-auto"
         >
           Send
         </Button>

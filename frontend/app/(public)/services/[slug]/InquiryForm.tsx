@@ -83,7 +83,7 @@ export default function InquiryForm({ service, user }: InquiryFormProps) {
             onChange={(e) =>
               setPackageId(e.target.value ? Number(e.target.value) : "")
             }
-            className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+            className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
           >
             <option value="">No package - general inquiry</option>
             {packages.map((p) => (
@@ -105,9 +105,10 @@ export default function InquiryForm({ service, user }: InquiryFormProps) {
         <input
           id="inq-name"
           required
+          autoComplete="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+          className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
         />
         {errors.name && <p className="text-err text-xs mt-1">{errors.name}</p>}
       </div>
@@ -122,10 +123,14 @@ export default function InquiryForm({ service, user }: InquiryFormProps) {
         <input
           id="inq-email"
           type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+          className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
         />
         {errors.email && <p className="text-err text-xs mt-1">{errors.email}</p>}
       </div>
@@ -140,9 +145,11 @@ export default function InquiryForm({ service, user }: InquiryFormProps) {
         <input
           id="inq-phone"
           type="tel"
+          inputMode="tel"
+          autoComplete="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+          className="w-full bg-warm border border-gold/22 text-ivory px-3 py-2.5 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
         />
       </div>
 

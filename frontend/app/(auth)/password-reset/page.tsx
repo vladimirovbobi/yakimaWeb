@@ -36,7 +36,7 @@ export default function PasswordResetPage() {
     return (
       <div className="text-center">
         <div className="ey mb-5">Reset email sent</div>
-        <h1 className="font-serif font-light text-ivory text-3xl leading-tight">
+        <h1 className="font-serif font-light text-ivory text-2xl sm:text-3xl leading-tight">
           Check your inbox.
         </h1>
         <p className="text-mist mt-4 leading-relaxed">
@@ -45,7 +45,8 @@ export default function PasswordResetPage() {
         </p>
         <Link
           href="/login"
-          className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 bg-gold text-black font-medium hover:bg-gold-hi transition-colors mt-8"
+          data-touch
+          className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 bg-gold text-black font-medium hover:bg-gold-hi transition-colors mt-8 w-full sm:w-auto"
         >
           Back to sign in
         </Link>
@@ -55,8 +56,8 @@ export default function PasswordResetPage() {
 
   return (
     <div>
-      <div className="mb-10">
-        <h1 className="font-serif font-light text-ivory text-3xl leading-tight">
+      <div className="mb-8 sm:mb-10">
+        <h1 className="font-serif font-light text-ivory text-2xl sm:text-3xl leading-tight">
           Reset password
         </h1>
         <p className="text-mist text-sm mt-2">
@@ -80,11 +81,14 @@ export default function PasswordResetPage() {
           <input
             id="email"
             type="email"
+            inputMode="email"
             autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
           />
         </div>
         <Button

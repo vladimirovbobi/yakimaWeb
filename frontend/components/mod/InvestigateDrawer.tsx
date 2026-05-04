@@ -24,6 +24,14 @@ export default function InvestigateDrawer({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  useEffect(() => {
     let cancelled = false;
     async function load() {
       if (authorIdHint == null) {
@@ -51,17 +59,24 @@ export default function InvestigateDrawer({
   }, [authorIdHint]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-black/60"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Author investigation"
+    >
       <aside
-        className="absolute right-0 top-0 h-full w-full max-w-xl bg-deep border-l border-gold/40 overflow-y-auto"
+        className="absolute inset-x-0 bottom-0 top-[10vh] sm:top-0 sm:right-0 sm:left-auto sm:bottom-auto sm:h-full w-full sm:max-w-xl bg-deep border-t sm:border-t-0 sm:border-l border-gold/40 overflow-y-auto safe-bottom sm:!pb-0"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-gold/14 flex items-center justify-between sticky top-0 bg-deep z-10">
+        <div className="p-4 sm:p-6 border-b border-gold/14 flex items-center justify-between sticky top-0 bg-deep z-10">
           <div className="ey">Investigation</div>
           <button
             type="button"
             onClick={onClose}
-            className="text-mist hover:text-gold-hi text-[11px] uppercase tracking-luxe"
+            className="inline-flex items-center justify-center min-h-11 px-3 text-mist hover:text-gold-hi text-[11px] uppercase tracking-luxe"
+            aria-label="Close investigation"
           >
             Close
           </button>

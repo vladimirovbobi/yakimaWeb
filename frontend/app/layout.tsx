@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Raleway } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
@@ -18,6 +18,15 @@ const sans = Raleway({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#080604",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: {
     default: "Yakima Real Estate Hub",
@@ -28,6 +37,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   ),
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Yakima Web",
+  },
+  formatDetection: { telephone: false },
 };
 
 export default function RootLayout({
@@ -42,6 +58,12 @@ export default function RootLayout({
       className={`${serif.variable} ${sans.variable}`}
     >
       <body className="min-h-screen flex flex-col">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:bg-gold focus:text-black focus:text-xs focus:uppercase focus:tracking-luxe"
+        >
+          Skip to main content
+        </a>
         <Providers>{children}</Providers>
       </body>
     </html>

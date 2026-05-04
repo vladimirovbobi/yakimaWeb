@@ -122,6 +122,10 @@ export default function BusinessInfoStep({
         <Input
           label="Website"
           type="url"
+          inputMode="url"
+          autoComplete="url"
+          autoCapitalize="none"
+          spellCheck={false}
           value={data.website}
           onChange={(e) => update("website", e.target.value)}
           onBlur={() => flush(data)}
@@ -130,6 +134,8 @@ export default function BusinessInfoStep({
         <Input
           label="Contact phone"
           type="tel"
+          inputMode="tel"
+          autoComplete="tel"
           value={data.contact_phone}
           onChange={(e) => update("contact_phone", e.target.value)}
           onBlur={() => flush(data)}
@@ -167,6 +173,7 @@ export default function BusinessInfoStep({
             variant="solid"
             loading={submitting}
             onClick={continueNext}
+            className="w-full sm:w-auto"
           >
             Continue
           </Button>

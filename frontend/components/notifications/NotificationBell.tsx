@@ -111,7 +111,7 @@ export default function NotificationBell() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`Notifications, ${count} unread`}
-        className="relative inline-flex items-center justify-center w-10 h-10 text-mist hover:text-gold border border-gold/22 hover:border-gold/52 rounded-md transition-colors"
+        className="relative inline-flex items-center justify-center w-11 h-11 text-mist hover:text-gold border border-gold/22 hover:border-gold/52 rounded-md transition-colors"
       >
         <BellIcon />
         {count > 0 && (
@@ -124,23 +124,42 @@ export default function NotificationBell() {
         )}
       </button>
       {open && (
-        <div
-          role="dialog"
-          className="absolute right-0 top-12 w-80 sm:w-96 bg-panel border border-gold/22 rounded-md shadow-card z-50 overflow-hidden"
-        >
+        <>
+          <div
+            className="sm:hidden fixed inset-0 z-40 bg-black/60"
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <div
+            role="dialog"
+            aria-label="Notifications"
+            className="fixed inset-x-0 top-[72px] bottom-0 z-50 bg-panel sm:absolute sm:inset-auto sm:top-12 sm:bottom-auto sm:right-0 sm:w-96 sm:bg-panel sm:border sm:border-gold/22 sm:rounded-md sm:shadow-card overflow-hidden flex flex-col safe-bottom sm:!pb-0"
+          >
           <div className="flex items-center justify-between px-4 py-3 border-b border-gold/14">
             <p className="text-[11px] uppercase tracking-luxe text-gold">
               Notifications
             </p>
-            <button
-              type="button"
-              onClick={markAllRead}
-              className="text-[11px] uppercase tracking-luxe text-mist hover:text-gold"
-            >
-              Mark all read
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={markAllRead}
+                className="px-2 py-2 text-[11px] uppercase tracking-luxe text-mist hover:text-gold"
+              >
+                Mark all read
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="sm:hidden inline-flex items-center justify-center w-11 h-11 text-mist hover:text-gold"
+                aria-label="Close notifications"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <ul className="max-h-96 overflow-y-auto divide-y divide-gold/14">
+          <ul className="flex-1 sm:max-h-96 overflow-y-auto divide-y divide-gold/14">
             {loading ? (
               <li className="px-4 py-6 text-center text-mist text-sm">
                 Loading…
@@ -180,12 +199,14 @@ export default function NotificationBell() {
             <Link
               href="/dashboard/notifications"
               onClick={() => setOpen(false)}
-              className="text-[11px] uppercase tracking-luxe text-gold hover:text-gold-hi"
+              data-touch
+              className="inline-block py-2 text-[11px] uppercase tracking-luxe text-gold hover:text-gold-hi"
             >
               View all
             </Link>
           </div>
         </div>
+        </>
       )}
     </div>
   );

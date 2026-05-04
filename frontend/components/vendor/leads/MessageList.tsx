@@ -25,9 +25,10 @@ export default function MessageList({ messages, currentUserId }: Props) {
   return (
     <div
       ref={ref}
-      className="flex flex-col gap-3 overflow-y-auto max-h-[60vh] py-4"
+      className="flex flex-col gap-3 overflow-y-auto max-h-[55vh] sm:max-h-[60vh] py-4"
       role="log"
       aria-live="polite"
+      aria-relevant="additions"
     >
       {messages.length === 0 ? (
         <p className="text-sm text-mist text-center py-12">

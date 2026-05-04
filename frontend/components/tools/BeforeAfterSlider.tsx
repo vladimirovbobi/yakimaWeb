@@ -108,9 +108,12 @@ export default function BeforeAfterSlider({
       <button
         type="button"
         aria-label="Adjust before/after split"
-        className="absolute top-1/2 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/60 bg-black/85 text-gold cursor-ew-resize hover:bg-black focus:outline-none focus:ring-2 focus:ring-gold/70"
+        className="absolute top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/60 bg-black/85 text-gold cursor-ew-resize hover:bg-black focus:outline-none focus:ring-2 focus:ring-gold/70 touch-none"
         style={{ left: `${position}%` }}
         onKeyDown={onKeyDown}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+        }}
       >
         <svg
           width="14"

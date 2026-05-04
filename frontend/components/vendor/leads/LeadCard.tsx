@@ -17,10 +17,11 @@ export default function LeadCard({ lead }: { lead: LeadCardData }) {
   return (
     <Link
       href={`/dashboard/vendor/leads/${lead.id}`}
-      className="block border border-gold/14 hover:border-gold/40 bg-panel/50 p-5 rounded-md transition-colors"
+      data-touch
+      className="block border border-gold/14 hover:border-gold/40 bg-panel/50 p-4 sm:p-5 rounded-md transition-colors"
     >
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <p className="font-serif text-lg text-ivory truncate">{buyer}</p>
+      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+        <p className="font-serif text-lg text-ivory truncate min-w-0 flex-1">{buyer}</p>
         <LeadStatusPill status={lead.status} />
       </div>
       <p className="text-[11px] uppercase tracking-luxe text-gold mb-2">

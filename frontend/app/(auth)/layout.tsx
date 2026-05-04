@@ -55,8 +55,8 @@ export default function AuthLayout({
         </p>
       </aside>
 
-      <main className="flex-1 flex flex-col">
-        <header className="flex items-center justify-between px-6 sm:px-10 py-6 lg:hidden">
+      <main id="main" className="flex-1 flex flex-col">
+        <header className="flex items-center justify-between px-4 sm:px-10 py-6 lg:hidden safe-top">
           <Link
             href="/"
             className="font-serif tracking-luxe uppercase text-gold text-lg"
@@ -64,7 +64,7 @@ export default function AuthLayout({
             Yakima Web
           </Link>
         </header>
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-10 safe-bottom">
           <div className="w-full max-w-md">{children}</div>
         </div>
       </main>

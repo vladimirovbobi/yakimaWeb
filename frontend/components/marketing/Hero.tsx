@@ -29,7 +29,7 @@ export default function Hero({
   return (
     <section
       className={cn(
-        "relative w-full min-h-[560px] md:min-h-[640px] lg:min-h-[72vh] bg-black overflow-hidden",
+        "relative w-full min-h-[480px] sm:min-h-[560px] md:min-h-[640px] lg:min-h-[72vh] bg-black overflow-hidden",
         className,
       )}
     >
@@ -58,7 +58,7 @@ export default function Hero({
 
       <Container
         as="div"
-        className="relative z-10 flex flex-col justify-center min-h-[560px] md:min-h-[640px] lg:min-h-[72vh] py-24"
+        className="relative z-10 flex flex-col justify-center min-h-[480px] sm:min-h-[560px] md:min-h-[640px] lg:min-h-[72vh] py-16 sm:py-24"
       >
         {eyebrow && (
           <motion.div
@@ -98,7 +98,8 @@ export default function Hero({
             {primary && (
               <Link
                 href={primary.href}
-                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 bg-gold text-black font-medium hover:bg-gold-hi transition-colors"
+                data-touch
+                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 bg-gold text-black font-medium hover:bg-gold-hi transition-colors w-full sm:w-auto"
               >
                 {primary.label}
               </Link>
@@ -106,7 +107,8 @@ export default function Hero({
             {secondary && (
               <Link
                 href={secondary.href}
-                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 border border-gold/52 text-gold hover:bg-gold hover:text-black transition-colors"
+                data-touch
+                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 border border-gold/52 text-gold hover:bg-gold hover:text-black transition-colors w-full sm:w-auto"
               >
                 {secondary.label}
               </Link>

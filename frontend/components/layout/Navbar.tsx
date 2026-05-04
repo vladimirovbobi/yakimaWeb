@@ -31,6 +31,15 @@ export default function Navbar() {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <>
       <header
@@ -81,10 +90,11 @@ export default function Navbar() {
 
           <button
             type="button"
-            className="lg:hidden p-2 -mr-2 relative z-[101] text-gold"
+            className="lg:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 relative z-[101] text-gold"
             onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
+            aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
+            aria-controls="mobile-nav"
           >
             {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -100,13 +110,20 @@ export default function Navbar() {
       )}
 
       {open && (
-        <div className="lg:hidden fixed left-0 right-0 top-[72px] sm:top-[88px] bottom-0 z-[95] bg-black border-t border-gold/14 overflow-y-auto">
+        <div
+          id="mobile-nav"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site navigation"
+          className="lg:hidden fixed left-0 right-0 top-[72px] sm:top-[88px] bottom-0 z-[95] bg-black border-t border-gold/14 overflow-y-auto safe-bottom"
+        >
           <nav className="max-w-[1180px] mx-auto px-6 py-8 space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
+                data-touch
                 className="block text-mist hover:text-gold uppercase text-sm tracking-luxe py-4 border-b border-gold/14"
               >
                 {link.name}
@@ -116,6 +133,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={() => setOpen(false)}
+                data-touch
                 className="flex items-center justify-center text-gold uppercase text-xs tracking-cap py-4 border border-gold/40"
               >
                 Sign in
@@ -123,6 +141,7 @@ export default function Navbar() {
               <Link
                 href="/signup"
                 onClick={() => setOpen(false)}
+                data-touch
                 className="flex w-full items-center justify-center bg-gold text-black uppercase text-xs tracking-cap py-4 font-medium"
               >
                 Get started

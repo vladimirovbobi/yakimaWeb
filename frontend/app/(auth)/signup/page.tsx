@@ -87,9 +87,9 @@ export default function SignupPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-10">
-        <div>
-          <h1 className="font-serif font-light text-ivory text-3xl leading-tight">
+      <div className="flex items-start justify-between gap-4 mb-8 sm:mb-10">
+        <div className="min-w-0">
+          <h1 className="font-serif font-light text-ivory text-2xl sm:text-3xl leading-tight">
             Create account
           </h1>
           <p className="text-mist text-sm mt-2">
@@ -98,7 +98,7 @@ export default function SignupPage() {
         </div>
         <Link
           href="/login"
-          className="text-[11px] uppercase tracking-luxe text-gold hover:text-gold-hi"
+          className="flex-shrink-0 min-h-11 inline-flex items-center text-[11px] uppercase tracking-luxe text-gold hover:text-gold-hi"
         >
           Sign in
         </Link>
@@ -121,11 +121,14 @@ export default function SignupPage() {
           <input
             id="email"
             type="email"
+            inputMode="email"
             autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
           />
           {errors.email && (
             <p className="text-err text-xs mt-1">{errors.email}</p>
@@ -147,7 +150,7 @@ export default function SignupPage() {
             minLength={8}
             value={pw}
             onChange={(e) => setPw(e.target.value)}
-            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
           />
           {pw && (
             <div className="mt-2 flex items-center gap-3">
@@ -181,7 +184,7 @@ export default function SignupPage() {
             required
             value={pw2}
             onChange={(e) => setPw2(e.target.value)}
-            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+            className="w-full bg-warm border border-gold/22 text-ivory px-4 py-3 text-sm rounded-md min-h-11 focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
           />
           {errors.password_confirm && (
             <p className="text-err text-xs mt-1">{errors.password_confirm}</p>

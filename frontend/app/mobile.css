@@ -1,0 +1,136 @@
+/* =====================================================================
+ * mobile.css - mobile-only refinements
+ *
+ * Imported once from globals.css. Everything here is purely additive:
+ * either guarded behind a viewport / hover query, or behind an opt-in
+ * utility class. Desktop layouts are not affected.
+ * ===================================================================== */
+
+/* iOS safe-area insets (notched devices). Padding the body so fixed-edge
+   elements and absolutely-positioned UI never sit underneath the cutout. */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+  .safe-bottom-tight {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+}
+
+/* Prevent zoom on iOS form input focus. iOS only zooms when font-size < 16px. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Touch targets minimum 44x44 on touch viewports. Tightly scoped: only
+   things that actually accept input. We avoid bare anchors so inline links
+   inside paragraphs are not blown up. */
+@media (max-width: 1024px) {
+  button:not([data-tt-skip]),
+  [role="button"]:not([data-tt-skip]),
+  a.cta,
+  a[data-touch],
+  .interactive {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Disable hover-only effects on touch devices so :hover never sticks. */
+@media (hover: none) {
+  .hover-lift:hover {
+    transform: none !important;
+  }
+  .group:hover .group-hover\:scale-\[1\.04\] {
+    transform: none !important;
+  }
+}
+
+/* Suppress the grey tap highlight + accidental long-press selection on
+   anything the user is meant to press. */
+button,
+[role="button"],
+a.cta,
+a[data-touch] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button,
+[role="button"] {
+  user-select: none;
+}
+
+/* Slimmer scrollbars on tiny viewports so they do not eat content width. */
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(191, 160, 106, 0.35);
+    border-radius: 999px;
+  }
+}
+
+/* Prevent layout shift when sticky elements collapse on small screens. */
+.sticky-mobile-safe {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Horizontal scroll-strips with momentum + snap. Opt-in via class. */
+.scroll-strip {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.scroll-strip > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/* No-scroll lock for body when a full-screen overlay is open. */
+.no-scroll {
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+}
+
+/* Mobile-only utility: full-bleed dialogs / sheets. */
+@media (max-width: 640px) {
+  .sheet-mobile {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    max-width: 100% !important;
+  }
+}
+
+/* Reduced motion override. Always honored. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

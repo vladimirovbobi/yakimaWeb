@@ -32,14 +32,14 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 bg-black border-b border-gold/14 backdrop-blur supports-[backdrop-filter]:bg-black/85">
-      <div className="px-6 lg:px-10 h-16 flex items-center justify-between gap-4">
+      <div className="px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-3">
         <Link
           href="/"
-          className="font-serif tracking-luxe uppercase text-gold text-base"
+          className="font-serif tracking-luxe uppercase text-gold text-base flex-shrink-0"
         >
           Yakima Web
         </Link>
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link
             href="/dashboard"
             className="text-[11px] uppercase tracking-luxe text-mist hover:text-gold hidden sm:inline"
@@ -53,9 +53,10 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           <button
             type="button"
             onClick={logout}
-            className="text-[11px] uppercase tracking-luxe text-mist hover:text-gold border border-gold/22 px-4 py-2 hover:border-gold/52 transition-colors"
+            className="min-h-11 text-[11px] uppercase tracking-luxe text-mist hover:text-gold border border-gold/22 px-3 sm:px-4 py-2 hover:border-gold/52 transition-colors"
           >
-            Sign out
+            <span className="hidden sm:inline">Sign out</span>
+            <span className="sm:hidden">Out</span>
           </button>
         </div>
       </div>

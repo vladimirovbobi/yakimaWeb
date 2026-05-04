@@ -12,7 +12,8 @@ export default function VendorChip({ vendor, size = "md" }: VendorChipProps) {
   return (
     <Link
       href={`/services/vendors/${vendor.slug}`}
-      className="inline-flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded"
+      data-touch
+      className="inline-flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded py-1"
     >
       {vendor.logo_url ? (
         <Image

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -8,13 +8,14 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function Card({ className, hover = true, children, ...rest }: CardProps) {
+  const reduced = useReducedMotion();
   if (hover) {
     return (
       <motion.div
-        whileHover={{ y: -4 }}
+        whileHover={reduced ? undefined : { y: -4 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "bg-deep border border-gold/14 transition-colors duration-300 hover:border-gold/35 flex flex-col",
+          "hover-lift bg-deep border border-gold/14 transition-colors duration-300 hover:border-gold/35 flex flex-col",
           className,
         )}
         {...(rest as React.ComponentProps<typeof motion.div>)}

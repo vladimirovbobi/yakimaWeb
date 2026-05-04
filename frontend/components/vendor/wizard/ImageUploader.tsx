@@ -98,12 +98,12 @@ export default function ImageUploader({
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={busy || value.length >= max}
-          className="px-5 py-2.5 text-[11px] uppercase tracking-luxe border border-gold/40 text-gold hover:bg-gold hover:text-black rounded-md disabled:opacity-50"
+          className="min-h-11 px-5 py-2.5 text-[11px] uppercase tracking-luxe border border-gold/40 text-gold hover:bg-gold hover:text-black rounded-md disabled:opacity-50"
         >
           {busy ? "Uploading…" : "Add images"}
         </button>
@@ -163,7 +163,8 @@ export default function ImageUploader({
               <button
                 type="button"
                 onClick={() => remove(i)}
-                className="mt-2 text-[10px] uppercase tracking-luxe text-mist hover:text-rose-400"
+                className="mt-2 inline-flex items-center min-h-11 text-[10px] uppercase tracking-luxe text-mist hover:text-rose-400"
+                aria-label={`Remove image ${i + 1}`}
               >
                 Remove
               </button>

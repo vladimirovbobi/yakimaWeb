@@ -239,9 +239,9 @@ export default function QueueWorkstation({
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-6">
         {/* Main item card */}
-        <article className="border border-gold/22 bg-panel p-8">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-3">
+        <article className="border border-gold/22 bg-panel p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="px-3 py-1 border border-gold/40 text-gold uppercase tracking-luxe text-[10px]">
                 {item.target_type}
               </span>
@@ -254,7 +254,7 @@ export default function QueueWorkstation({
                 </span>
               )}
             </div>
-            <span className="text-[11px] uppercase tracking-luxe text-dim">
+            <span className="text-[11px] uppercase tracking-luxe text-dim flex-shrink-0">
               ID #{item.id}
             </span>
           </div>
@@ -281,7 +281,7 @@ export default function QueueWorkstation({
           {/* Classifier output (redacted — no rationale) */}
           <div className="mt-8 pt-6 border-t border-gold/14">
             <div className="ey mb-3">Classifier signals</div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
               <div>
                 <div className="text-[10px] uppercase tracking-luxe text-dim mb-1">
                   Allowed
@@ -312,7 +312,7 @@ export default function QueueWorkstation({
         </article>
 
         {/* Action panel */}
-        <aside className="border border-gold/22 bg-deep p-6 space-y-5 h-fit sticky top-24">
+        <aside className="border border-gold/22 bg-deep p-5 sm:p-6 space-y-5 h-fit lg:sticky lg:top-24 order-1 lg:order-2">
           <div>
             <div className="ey mb-3">Decide</div>
             <div className="space-y-2">
@@ -406,8 +406,8 @@ export default function QueueWorkstation({
         </aside>
       </div>
 
-      {/* Keyboard hints */}
-      <div className="text-[10px] uppercase tracking-luxe text-dim border-t border-gold/14 pt-3 flex flex-wrap gap-x-6 gap-y-1">
+      {/* Keyboard hints — hidden on touch where keyboard shortcuts don't apply */}
+      <div className="hidden sm:flex text-[10px] uppercase tracking-luxe text-dim border-t border-gold/14 pt-3 flex-wrap gap-x-6 gap-y-1">
         <span>A approve</span>
         <span>R remove</span>
         <span>E escalate</span>
@@ -418,8 +418,8 @@ export default function QueueWorkstation({
 
       {/* Escalation modal */}
       {escalateOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6">
-          <div className="bg-deep border border-gold/40 max-w-lg w-full p-8">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-6">
+          <div className="bg-deep border border-gold/40 sm:max-w-lg w-full p-6 sm:p-8 sheet-mobile sm:!max-w-lg max-h-[90vh] overflow-y-auto safe-bottom sm:!pb-8">
             <div className="ey mb-3">Escalate to operators</div>
             <h3 className="font-serif font-light text-ivory text-xl mb-4">
               Why does this need ops attention?
@@ -433,11 +433,11 @@ export default function QueueWorkstation({
               className="w-full bg-warm/40 border border-gold/22 text-ivory px-3 py-2 text-sm mb-4"
               placeholder="Pattern of abuse, edge case, policy ambiguity..."
             />
-            <div className="flex justify-end gap-3">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setEscalateOpen(false)}
-                className="px-4 py-2 border border-gold/22 text-mist uppercase tracking-luxe text-[11px]"
+                className="px-4 py-3 sm:py-2 border border-gold/22 text-mist uppercase tracking-luxe text-[11px]"
               >
                 Cancel
               </button>
@@ -447,7 +447,7 @@ export default function QueueWorkstation({
                   submitDecision("escalate", undefined, escalateNotes)
                 }
                 disabled={busy || escalateNotes.length === 0}
-                className="px-4 py-2 border border-gold/40 text-gold uppercase tracking-luxe text-[11px] hover:bg-gold/10"
+                className="px-4 py-3 sm:py-2 border border-gold/40 text-gold uppercase tracking-luxe text-[11px] hover:bg-gold/10 disabled:opacity-50"
               >
                 Send to ops
               </button>

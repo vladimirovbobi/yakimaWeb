@@ -56,14 +56,15 @@ export default function Footer() {
           </div>
 
           {columns.map((col) => (
-            <div key={col.title} className="space-y-4">
+            <div key={col.title} className="space-y-3">
               <h3 className="ey">{col.title}</h3>
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {col.links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-mist hover:text-gold-hi text-sm transition-colors"
+                      data-touch
+                      className="block py-2 text-mist hover:text-gold-hi text-sm transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -74,11 +75,11 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 pt-8 border-t border-gold/14 flex flex-col md:flex-row gap-4 justify-between text-xs text-dim">
+        <div className="mt-14 pt-8 border-t border-gold/14 flex flex-col md:flex-row gap-4 justify-between text-xs text-dim safe-bottom-tight">
           <span className="tracking-label uppercase">
             (c) {new Date().getFullYear()} Yakima Web
           </span>
-          <span className="max-w-2xl text-right md:text-right text-[11px] leading-relaxed">
+          <span className="max-w-2xl md:text-right text-[11px] leading-relaxed">
             Real estate licenses verified via ARELLO. Yakima Web does not
             represent buyers or sellers - see Terms.
           </span>

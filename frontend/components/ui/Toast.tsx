@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ push }}>
       {children}
       <div
-        className="fixed top-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"
+        className="fixed bottom-4 left-4 right-4 sm:bottom-auto sm:top-4 sm:left-auto sm:right-4 z-[200] flex flex-col gap-2 pointer-events-none safe-bottom-tight sm:!pb-0"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -70,12 +70,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           {items.map((t) => (
             <motion.div
               key={t.id}
-              initial={reduced ? false : { opacity: 0, y: -10 }}
+              initial={reduced ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                "pointer-events-auto px-5 py-3 border text-sm max-w-sm",
+                "pointer-events-auto px-5 py-3 border text-sm w-full sm:max-w-sm",
                 tones[t.tone],
               )}
               role="status"

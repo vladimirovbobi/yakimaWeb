@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="No services yet">
+  <title>No services yet</title>
+  <g fill="none" stroke="#BFA06A" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25">
+    <rect x="44" y="48" width="56" height="40" rx="1.5" opacity="0.7"/>
+    <rect x="50" y="92" width="56" height="6" opacity="0.4"/>
+    <rect x="50" y="102" width="38" height="4" opacity="0.3"/>
+    <rect x="112" y="48" width="56" height="40" rx="1.5" opacity="0.7"/>
+    <rect x="118" y="92" width="56" height="6" opacity="0.4"/>
+    <rect x="118" y="102" width="40" height="4" opacity="0.3"/>
+    <rect x="180" y="48" width="20" height="40" rx="1.5" opacity="0.45" stroke-dasharray="3 3"/>
+    <line x1="60" y1="130" x2="180" y2="130" opacity="0.35"/>
+    <line x1="60" y1="140" x2="160" y2="140" opacity="0.3"/>
+    <circle cx="72" cy="68" r="4" opacity="0.7"/>
+    <circle cx="140" cy="68" r="4" opacity="0.7"/>
+  </g>
+</svg>

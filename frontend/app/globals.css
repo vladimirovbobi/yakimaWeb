@@ -1,3 +1,5 @@
+@import "./mobile.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,6 +17,19 @@
     --color-ivory: #f5efe0;
     --color-mist: #cec4a8;
     --color-dim: #706450;
+
+    /* Brand-prefixed aliases for non-Tailwind contexts (custom CSS, embedded
+       iframes, third-party widgets). Mirror the --color-* tokens above. */
+    --yw-black: #080604;
+    --yw-deep: #0d0904;
+    --yw-panel: #141008;
+    --yw-warm: #1a1208;
+    --yw-gold: #bfa06a;
+    --yw-gold-hi: #dec98a;
+    --yw-gold-dim: #5a4a28;
+    --yw-ivory: #f5efe0;
+    --yw-mist: #cec4a8;
+    --yw-dim: #706450;
   }
 
   html {

@@ -112,7 +112,7 @@ export default function CommentForm({
         className="w-full bg-warm border border-gold/22 text-ivory placeholder-dim px-4 py-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-colors resize-y"
       />
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           ref={fileInputRef}
           type="file"
@@ -123,7 +123,8 @@ export default function CommentForm({
         />
         <label
           htmlFor={`comment-image-${parentId ?? "root"}`}
-          className="inline-flex items-center gap-2 px-3 py-2 border border-gold/22 text-mist text-[11px] uppercase tracking-luxe cursor-pointer hover:border-gold/40"
+          data-touch
+          className="inline-flex items-center gap-2 min-h-11 px-3 py-2 border border-gold/22 text-mist text-[11px] uppercase tracking-luxe cursor-pointer hover:border-gold/40"
         >
           {image ? "Change image" : "Attach image"}
         </label>
@@ -148,16 +149,22 @@ export default function CommentForm({
         </div>
       )}
 
-      {error && <p className="text-err text-xs">{error}</p>}
-      <div className="flex items-center gap-3">
-        <Button type="submit" variant="solid" size="sm" loading={pending}>
+      {error && <p className="text-err text-xs" role="alert">{error}</p>}
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
+        <Button
+          type="submit"
+          variant="solid"
+          size="sm"
+          loading={pending}
+          className="w-full sm:w-auto"
+        >
           Post comment
         </Button>
         {onDone && (
           <button
             type="button"
             onClick={onDone}
-            className="text-[11px] uppercase tracking-luxe text-mist hover:text-gold"
+            className="min-h-11 text-[11px] uppercase tracking-luxe text-mist hover:text-gold"
           >
             Cancel
           </button>

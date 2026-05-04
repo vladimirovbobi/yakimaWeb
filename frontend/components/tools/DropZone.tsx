@@ -94,10 +94,12 @@ export default function DropZone({ onPick, disabled }: Props) {
         </div>
         <div className="ey mb-2 text-gold">Upload</div>
         <div className="font-serif text-ivory text-xl sm:text-2xl mb-1">
-          Drop a room photo here
+          <span className="hidden sm:inline">Drop a room photo here</span>
+          <span className="sm:hidden">Tap to choose a photo</span>
         </div>
         <p className="text-mist text-sm">
-          or click to choose. JPG or PNG, up to 10 MB.
+          <span className="hidden sm:inline">or click to choose. </span>
+          JPG or PNG, up to 10 MB.
         </p>
 
         <input

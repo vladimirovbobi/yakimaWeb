@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="Inbox zero">
+  <title>Inbox zero</title>
+  <g fill="none" stroke="#BFA06A" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25">
+    <path d="M120 46 C108 46 100 54 100 70 V96 L92 108 H148 L140 96 V70 C140 54 132 46 120 46 Z" opacity="0.75"/>
+    <path d="M114 116 C114 120 117 122 120 122 C123 122 126 120 126 116" opacity="0.7"/>
+    <line x1="64" y1="138" x2="176" y2="138" opacity="0.35"/>
+    <line x1="80" y1="148" x2="160" y2="148" opacity="0.3"/>
+    <circle cx="120" cy="78" r="2" fill="#DEC98A" stroke="none"/>
+    <path d="M86 70 L92 76 M154 76 L160 70" opacity="0.55"/>
+  </g>
+</svg>

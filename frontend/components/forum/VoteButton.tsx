@@ -82,7 +82,7 @@ export default function VoteButton({
         aria-label="Upvote"
         aria-pressed={myVote === 1}
         className={cn(
-          "p-1 transition-colors",
+          "inline-flex items-center justify-center w-11 h-11 transition-colors",
           myVote === 1 ? "text-gold" : "text-dim hover:text-mist",
         )}
       >
@@ -105,7 +105,7 @@ export default function VoteButton({
         aria-label="Downvote"
         aria-pressed={myVote === -1}
         className={cn(
-          "p-1 transition-colors",
+          "inline-flex items-center justify-center w-11 h-11 transition-colors",
           myVote === -1 ? "text-err" : "text-dim hover:text-mist",
         )}
       >
