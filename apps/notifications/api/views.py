@@ -5,6 +5,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.pagination import TimeCursorPagination
 
 from ..models import Notification
@@ -30,7 +31,7 @@ class NotificationListView(generics.ListAPIView):
         return qs
 
 
-class NotificationMarkReadView(APIView):
+class NotificationMarkReadView(StrictCSRFMixin, APIView):
     """POST /api/v1/me/notifications/<id>/read/."""
 
     permission_classes = [permissions.IsAuthenticated]
@@ -40,7 +41,7 @@ class NotificationMarkReadView(APIView):
         return Response({"updated": n}, status=status.HTTP_200_OK)
 
 
-class NotificationMarkAllReadView(APIView):
+class NotificationMarkAllReadView(StrictCSRFMixin, APIView):
     """POST /api/v1/me/notifications/read-all/."""
 
     permission_classes = [permissions.IsAuthenticated]

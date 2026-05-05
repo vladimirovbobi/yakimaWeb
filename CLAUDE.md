@@ -75,8 +75,8 @@ yakimaWeb/
 ├── caddy/               Caddy reverse proxy
 │   ├── Caddyfile        routing + edge security headers + rate limit
 │   └── Dockerfile       xcaddy build w/ rate-limit module
-├── templates/           LEGACY — kept only for admin + emails
-├── static/              LEGACY — Vite assets only used for legacy template URLs
+├── templates/           allauth (account/), email digests (emails/), and core/{healthz,robots} only — DEB-002 removed Phase-1 monolith
+├── static/              LEGACY — Vite assets retained for allauth + emails (DEB-003 follow-up)
 ├── docs/                full enterprise doc suite (see Stack table)
 │   ├── adr/             9 ADRs (0001 superseded by 0005)
 │   └── research/        design audit, ARELLO notes, marketplace patterns
@@ -170,7 +170,7 @@ npm run dev                 # http://localhost:3000
 
 - [x] **Phase 0** — Research & Reference docs
 - [x] **Phase 1** — Foundation (auth, license verify, design system, AI moderation, audit, admin lockdown)
-- [x] **Phases 2-8 scaffold** — models + Phase-1-era views (preserved as legacy until Next.js parity)
+- [x] **Phases 2-8 scaffold** — models + DRF API surface (Phase-1 template views deleted in DEB-002 once Next.js reached parity)
 - [x] **Sprint 0a** — Full enterprise doc suite (RFP, SRS, SAD, ICD, MTP, RTM, Risk, Threat Model, Security Playbook, Copy Guide, Access Matrix) + ADRs 0005-0009
 - [x] **Sprint 0b/0c** — Architecture split: DRF backend + Next.js 15 frontend + Caddy + img-worker (8 services)
 - [ ] **Sprint 1** — Real APIs (ARELLO/Gemini/Postmark/R2/Sentry) + seed data + brand assets

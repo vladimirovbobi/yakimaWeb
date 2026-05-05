@@ -38,6 +38,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.models import AccessLog, ActionLog, Surface
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsModerator
 from apps.core.api.throttling import FlagThrottle
@@ -149,7 +150,7 @@ _ACTION_TO_STATUS = {
 }
 
 
-class DecisionCreateView(CreateAPIView):
+class DecisionCreateView(StrictCSRFMixin, CreateAPIView):
     """POST /api/v1/mod/items/<id>/decision/ — moderator decision on a queued item."""
 
     serializer_class = DecisionCreateSerializer
@@ -216,7 +217,7 @@ class DecisionCreateView(CreateAPIView):
 
 
 # ─── Escalate ────────────────────────────────────────────────────────────
-class EscalateView(CreateAPIView):
+class EscalateView(StrictCSRFMixin, CreateAPIView):
     """POST /api/v1/mod/items/<id>/escalate/ — flag for operator attention.
 
     TODO: Phase 6 — replace with a dedicated `Escalation` model + assignment to
@@ -273,7 +274,7 @@ class EscalateView(CreateAPIView):
 
 
 # ─── Flags ───────────────────────────────────────────────────────────────
-class FlagCreateView(CreateAPIView):
+class FlagCreateView(StrictCSRFMixin, CreateAPIView):
     """POST /api/v1/mod/flags/ — any authenticated user can flag content."""
 
     serializer_class = FlagCreateSerializer

@@ -76,7 +76,10 @@ export interface Comment {
   is_removed: boolean;
 }
 
-export type Flair =
+// Backend FlairSerializer returns {slug, label, color, sort_order}.
+// (Older code referenced just the slug as a string union — keep that as
+// FlairSlug for places that want a tag literal, but the wire shape is an object.)
+export type FlairSlug =
   | "buying"
   | "selling"
   | "market"
@@ -85,6 +88,13 @@ export type Flair =
   | "vendors"
   | "neighborhood"
   | "general";
+
+export interface Flair {
+  slug: string;
+  label: string;
+  color?: string;
+  sort_order?: number;
+}
 
 export interface ForumThread {
   id: number;

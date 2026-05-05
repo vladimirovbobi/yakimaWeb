@@ -10,6 +10,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsOwnerOrReadOnly
 from apps.core.api.throttling import ForumWriteThrottle, VoteThrottle
@@ -143,7 +144,7 @@ class PublicThreadRepliesView(generics.ListAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — Threads
 # ──────────────────────────────────────────────────────────────────────────
-class ThreadCreateView(generics.CreateAPIView):
+class ThreadCreateView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /api/v1/community/<flair_slug>/threads/ — moderated on save."""
 
     serializer_class   = ForumThreadCreateUpdateSerializer
@@ -164,7 +165,7 @@ class ThreadCreateView(generics.CreateAPIView):
         return Response(out.data, status=status.HTTP_201_CREATED)
 
 
-class ThreadUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class ThreadUpdateDestroyView(StrictCSRFMixin, generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/PUT/DELETE /api/v1/community/threads/<slug>/ — owner-only writes."""
 
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
@@ -182,7 +183,7 @@ class ThreadUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — Replies
 # ──────────────────────────────────────────────────────────────────────────
-class ReplyCreateView(generics.CreateAPIView):
+class ReplyCreateView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /api/v1/community/threads/<slug>/replies/ — moderated."""
 
     serializer_class   = ForumReplyCreateSerializer
@@ -209,7 +210,7 @@ class ReplyCreateView(generics.CreateAPIView):
         return Response(out.data, status=status.HTTP_201_CREATED)
 
 
-class ReplyUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class ReplyUpdateDestroyView(StrictCSRFMixin, generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/DELETE /api/v1/community/replies/<id>/ — owner-only writes."""
 
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
@@ -250,7 +251,7 @@ def _resolve_target(target_type: str, item_id: int):
     return ct, target, model_cls
 
 
-class VoteView(APIView):
+class VoteView(StrictCSRFMixin, APIView):
     """POST /api/v1/forum/items/<int:item_id>/vote/ — idempotent vote upsert."""
 
     permission_classes = [permissions.IsAuthenticated]

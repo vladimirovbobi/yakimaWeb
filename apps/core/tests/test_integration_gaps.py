@@ -52,6 +52,13 @@ def _png_bytes(size: tuple[int, int] = (8, 8)) -> bytes:
 def _client_for(user) -> APIClient:
     c = APIClient()
     c.force_authenticate(user=user)
+    # Prime CSRF cookie + mirror into default headers so StrictCSRFMixin
+    # passes on every unsafe request. Tests that want to assert the negative
+    # case use APIClient() directly.
+    c.get("/api/v1/me/")
+    cookie = c.cookies.get("yw_csrf")
+    if cookie is not None:
+        c.defaults["HTTP_X_CSRFTOKEN"] = cookie.value
     return c
 
 

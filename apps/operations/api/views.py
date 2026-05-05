@@ -35,6 +35,7 @@ from apps.accounts.models import (
     VendorProfile,
 )
 from apps.audit.models import ActionLog
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.permissions import IsOperator, RequiresOTP
 from apps.moderation.models import (
     ModerationAction,
@@ -249,7 +250,7 @@ class MetricCardView(GenericAPIView):
 
 
 # ─── User suspension ─────────────────────────────────────────────────────
-class UserSuspendView(GenericAPIView):
+class UserSuspendView(StrictCSRFMixin, GenericAPIView):
     """POST /api/v1/ops/users/<int:user_id>/suspend/ — disable + Celery re-enable."""
 
     serializer_class = UserSuspendSerializer
@@ -309,7 +310,7 @@ class UserSuspendView(GenericAPIView):
 
 
 # ─── Vendor status ───────────────────────────────────────────────────────
-class VendorStatusUpdateView(UpdateAPIView):
+class VendorStatusUpdateView(StrictCSRFMixin, UpdateAPIView):
     """PATCH /api/v1/ops/vendors/<int:vendor_id>/ — flip status + log."""
 
     serializer_class = VendorStatusUpdateSerializer
@@ -336,7 +337,7 @@ class VendorStatusUpdateView(UpdateAPIView):
 
 
 # ─── License override ────────────────────────────────────────────────────
-class LicenseOverrideView(GenericAPIView):
+class LicenseOverrideView(StrictCSRFMixin, GenericAPIView):
     """POST /api/v1/ops/licenses/<int:profile_id>/override/ — manual verification flip."""
 
     serializer_class = LicenseOverrideSerializer
@@ -394,7 +395,7 @@ _TAKEDOWN_MAP = {
 }
 
 
-class ContentTakedownView(GenericAPIView):
+class ContentTakedownView(StrictCSRFMixin, GenericAPIView):
     """POST /api/v1/ops/content/takedown/ — set moderation_status='removed'."""
 
     serializer_class = ContentTakedownSerializer

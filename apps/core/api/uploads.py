@@ -26,6 +26,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
+from apps.core.api.csrf import StrictCSRFMixin
+
 log = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -56,7 +58,12 @@ _MIME_BY_EXT: dict[str, str] = {
 
 
 def _probe_image(blob: bytes) -> str:
-    """Return the Pillow-detected MIME type. Raises ValidationError on bad bytes."""
+    """Return the Pillow-detected MIME type. Raises ValidationError on bad bytes.
+
+    Catches Pillow's DecompressionBombError explicitly (SEC-018) so a malicious
+    high-compression image that decodes to billions of pixels surfaces as a
+    clean 400 instead of a 500 from an OOM.
+    """
     try:
         from PIL import Image, UnidentifiedImageError
     except ImportError as exc:  # pragma: no cover — Pillow is in the env
@@ -65,6 +72,10 @@ def _probe_image(blob: bytes) -> str:
     try:
         img = Image.open(BytesIO(blob))
         img.verify()
+    except Image.DecompressionBombError as exc:
+        raise ValidationError(
+            {"file": "Image too large to process safely."},
+        ) from exc
     except (UnidentifiedImageError, Exception) as exc:
         raise ValidationError({"file": "File is not a valid image."}) from exc
 
@@ -77,7 +88,7 @@ def _probe_image(blob: bytes) -> str:
     }.get(fmt, "")
 
 
-class ImageUploadView(generics.GenericAPIView):
+class ImageUploadView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /api/v1/uploads/?type=<upload_type>.
 
     Returns:

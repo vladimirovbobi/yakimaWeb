@@ -5,7 +5,6 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -56,8 +55,9 @@ class ForumThread(ModeratableMixin, TimeStampedModel):
             self.slug = (slugify(self.title) + "-" + str(timezone.now().timestamp())[:10])[:280]
         super().save(*args, **kwargs)
 
-    def get_absolute_url(self):
-        return reverse("forum:thread_detail", kwargs={"slug": self.slug})
+    def get_absolute_url(self) -> str:
+        # Next.js public route (ADR-0005 split). Server-rendered legacy templates removed in DEB-002.
+        return f"/community/threads/{self.slug}/"
 
     @property
     def hot_score(self) -> float:

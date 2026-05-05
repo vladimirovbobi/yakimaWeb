@@ -1,7 +1,6 @@
 """Polymorphic Post (org/blog/landing) + threaded Comment + Tag. All UGC moderated."""
 from django.conf import settings
 from django.db import models
-from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
@@ -80,8 +79,9 @@ class Post(ModeratableMixin, TimeStampedModel):
             self.slug = slugify(self.title)[:240]
         super().save(*args, **kwargs)
 
-    def get_absolute_url(self):
-        return reverse("content:post_detail", kwargs={"slug": self.slug})
+    def get_absolute_url(self) -> str:
+        # Next.js public route (ADR-0005 split). Server-rendered legacy templates removed in DEB-002.
+        return f"/blog/{self.slug}/"
 
     @property
     def is_visible(self) -> bool:

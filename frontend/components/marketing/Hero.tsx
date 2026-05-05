@@ -1,6 +1,6 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
+// Pure server component now — no Framer Motion. The hero renders at its final
+// state on SSR, no animation gating that can fail under React 19.2 + Next 16.
+// (Visual fade-up was nice but having content reliably visible matters more.)
 import Link from "next/link";
 import Container from "@/components/layout/Container";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,6 @@ export default function Hero({
   secondary,
   className,
 }: HeroProps) {
-  const reduced = useReducedMotion();
-
   return (
     <section
       className={cn(
@@ -34,17 +32,10 @@ export default function Hero({
       )}
     >
       {bgImage && (
-        <motion.div
-          className="absolute inset-0"
-          initial={reduced ? false : { opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div
-            className="absolute inset-0 bg-cover bg-center animate-slow-zoom"
-            style={{ backgroundImage: `url(${bgImage})` }}
-          />
-        </motion.div>
+        <div
+          className="absolute inset-0 bg-cover bg-center animate-slow-zoom"
+          style={{ backgroundImage: `url(${bgImage})` }}
+        />
       )}
 
       <div
@@ -60,41 +51,17 @@ export default function Hero({
         as="div"
         className="relative z-10 flex flex-col justify-center min-h-[480px] sm:min-h-[560px] md:min-h-[640px] lg:min-h-[72vh] py-16 sm:py-24"
       >
-        {eyebrow && (
-          <motion.div
-            initial={reduced ? false : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="ey mb-6"
-          >
-            {eyebrow}
-          </motion.div>
-        )}
-        <motion.h1
-          initial={reduced ? false : { opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="font-serif text-ivory font-light leading-[1.05] text-[clamp(2.5rem,6vw,4.75rem)] max-w-4xl"
-        >
+        {eyebrow && <div className="ey mb-6">{eyebrow}</div>}
+        <h1 className="font-serif text-ivory font-light leading-[1.05] text-[clamp(2.5rem,6vw,4.75rem)] max-w-4xl">
           {title}
-        </motion.h1>
+        </h1>
         {subtitle && (
-          <motion.p
-            initial={reduced ? false : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.5 }}
-            className="text-mist text-base md:text-lg max-w-2xl mt-6 leading-relaxed"
-          >
+          <p className="text-mist text-base md:text-lg max-w-2xl mt-6 leading-relaxed">
             {subtitle}
-          </motion.p>
+          </p>
         )}
         {(primary || secondary) && (
-          <motion.div
-            initial={reduced ? false : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.7 }}
-            className="flex flex-col sm:flex-row gap-4 mt-10"
-          >
+          <div className="flex flex-col sm:flex-row gap-4 mt-10">
             {primary && (
               <Link
                 href={primary.href}
@@ -113,7 +80,7 @@ export default function Hero({
                 {secondary.label}
               </Link>
             )}
-          </motion.div>
+          </div>
         )}
       </Container>
     </section>

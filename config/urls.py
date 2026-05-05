@@ -1,4 +1,9 @@
-"""Top-level URL configuration."""
+"""Top-level URL configuration.
+
+Post-DEB-002: legacy template URL includes deleted. Caddy routes only
+/api/*, /admin/*, /accounts/* (allauth), /sitemap.xml, /robots.txt,
+/healthz, /static/* to Django. Everything else goes to Next.js.
+"""
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -16,20 +21,13 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
 
+    # Per-author RSS feed — only legacy template URL kept post DEB-002
+    path("blog/", include("apps.content.urls")),
+
     # Sitemap + robots remain server-rendered (Next.js fetches via /api if needed)
     path("sitemap.xml", sitemap, {"sitemaps": SITEMAPS}, name="sitemap"),
     path("robots.txt",  TemplateView.as_view(template_name="core/robots.txt", content_type="text/plain"), name="robots"),
     path("healthz",     TemplateView.as_view(template_name="core/healthz.html"), name="healthz"),
-
-    # Legacy template URLs — preserved during 0c migration so Phase 1 tests stay green.
-    # Will be removed after Next.js reaches parity (end of Sprint 0c).
-    path("realtor/",  include("apps.accounts.urls")),
-    path("blog/",     include("apps.content.urls")),
-    path("tools/",    include("apps.tools.urls")),
-    path("community/",include("apps.forum.urls")),
-    path("services/", include("apps.marketplace.urls")),
-    path("ops/",      include("apps.operations.urls")),
-    path("",          include("apps.core.urls")),
 ]
 
 if settings.DEBUG:

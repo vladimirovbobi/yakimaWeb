@@ -23,6 +23,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import VendorProfile
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsVendor
 from apps.core.api.throttling import LeadThrottle, MessageThrottle
@@ -274,7 +275,7 @@ class PublicVendorServicesView(generics.ListAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — services (vendor)
 # ──────────────────────────────────────────────────────────────────────────
-class ServiceCreateView(generics.CreateAPIView):
+class ServiceCreateView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /v1/services/ — IsVendor."""
 
     permission_classes = [IsVendor]
@@ -285,7 +286,7 @@ class ServiceCreateView(generics.CreateAPIView):
         serializer.save(vendor=vendor)
 
 
-class ServiceUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class ServiceUpdateDestroyView(StrictCSRFMixin, generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/DELETE /v1/services/<slug>/."""
 
     permission_classes = [IsVendor, IsServiceOwner]
@@ -306,7 +307,7 @@ class ServiceUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — packages (per service)
 # ──────────────────────────────────────────────────────────────────────────
-class PackageListCreateView(generics.ListCreateAPIView):
+class PackageListCreateView(StrictCSRFMixin, generics.ListCreateAPIView):
     """GET/POST /v1/services/<service_slug>/packages/."""
 
     permission_classes = [IsVendor]
@@ -328,7 +329,7 @@ class PackageListCreateView(generics.ListCreateAPIView):
         serializer.save(service=self._get_service())
 
 
-class PackageUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class PackageUpdateDestroyView(StrictCSRFMixin, generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/DELETE /v1/services/packages/<id>/."""
 
     permission_classes = [IsVendor, IsServiceOwner]
@@ -341,7 +342,7 @@ class PackageUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — bundles (per vendor)
 # ──────────────────────────────────────────────────────────────────────────
-class BundleListCreateView(generics.ListCreateAPIView):
+class BundleListCreateView(StrictCSRFMixin, generics.ListCreateAPIView):
     """GET/POST /v1/services/bundles/."""
 
     permission_classes = [IsVendor]
@@ -364,7 +365,7 @@ class BundleListCreateView(generics.ListCreateAPIView):
                 .prefetch_related("items__service"))
 
 
-class BundleUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class BundleUpdateDestroyView(StrictCSRFMixin, generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/DELETE /v1/services/bundles/<slug>/."""
 
     permission_classes = [IsVendor, IsServiceOwner]
@@ -389,7 +390,7 @@ class BundleUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — vendor onboard wizard
 # ──────────────────────────────────────────────────────────────────────────
-class VendorOnboardStepView(generics.GenericAPIView):
+class VendorOnboardStepView(StrictCSRFMixin, generics.GenericAPIView):
     """POST/PATCH /v1/vendors/onboard/<step>/.
 
     Step keys: business | categories | services | gallery | publish.
@@ -632,7 +633,7 @@ class VendorOnboardStepView(generics.GenericAPIView):
         return slug
 
 
-class VendorProfileMeView(generics.RetrieveUpdateAPIView):
+class VendorProfileMeView(StrictCSRFMixin, generics.RetrieveUpdateAPIView):
     """GET/PATCH /v1/vendors/me/. Tagline goes through moderation via signals."""
 
     permission_classes = [IsVendor]
@@ -645,7 +646,7 @@ class VendorProfileMeView(generics.RetrieveUpdateAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Leads
 # ──────────────────────────────────────────────────────────────────────────
-class LeadCreateView(generics.CreateAPIView):
+class LeadCreateView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /v1/leads/ — IsAuthenticated, throttle 5/hr."""
 
     permission_classes = [permissions.IsAuthenticated]
@@ -707,7 +708,7 @@ class LeadDetailView(generics.RetrieveAPIView):
                 .prefetch_related("messages"))
 
 
-class LeadStatusUpdateView(generics.UpdateAPIView):
+class LeadStatusUpdateView(StrictCSRFMixin, generics.UpdateAPIView):
     """PATCH /v1/leads/<id>/status/ — vendor only."""
 
     permission_classes = [IsVendor, IsLeadVendor]
@@ -728,7 +729,7 @@ class LeadStatusUpdateView(generics.UpdateAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Lead messages
 # ──────────────────────────────────────────────────────────────────────────
-class LeadMessageListCreateView(generics.ListCreateAPIView):
+class LeadMessageListCreateView(StrictCSRFMixin, generics.ListCreateAPIView):
     """GET/POST /v1/leads/<lead_id>/messages/ — party only.
 
     Writes throttled at 10/min via MessageThrottle to keep chat civilized.
@@ -769,7 +770,7 @@ class LeadMessageListCreateView(generics.ListCreateAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Reviews
 # ──────────────────────────────────────────────────────────────────────────
-class ReviewCreateView(generics.CreateAPIView):
+class ReviewCreateView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /v1/leads/<lead_id>/review/ — buyer + lead `won` only."""
 
     permission_classes = [permissions.IsAuthenticated, IsLeadBuyer]
@@ -796,7 +797,7 @@ class ReviewCreateView(generics.CreateAPIView):
         return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
 
 
-class ReviewResponseCreateView(generics.GenericAPIView):
+class ReviewResponseCreateView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /v1/leads/reviews/<id>/response/ — vendor of the lead only."""
 
     permission_classes = [IsVendor]

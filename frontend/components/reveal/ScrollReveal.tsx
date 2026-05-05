@@ -1,13 +1,12 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import {
-  motion,
-  useInView,
-  useAnimation,
-  useReducedMotion,
-} from "framer-motion";
+import { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+
+// Native IntersectionObserver + CSS instead of Framer Motion's useAnimation/
+// useInView combo. Framer's animate-on-controls path is unreliable under
+// Next 16 + React 19.2 + RSC client boundary (animations sometimes never fire,
+// leaving content stuck at opacity:0). CSS keyframes are deterministic.
 
 type Direction = "up" | "down" | "left" | "right" | "fade";
 
@@ -33,48 +32,51 @@ export default function ScrollReveal({
   once = true,
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once, amount: threshold });
-  const controls = useAnimation();
-  const reduced = useReducedMotion();
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (reduced) {
-      controls.set({ opacity: 1, x: 0, y: 0 });
+    // Honor prefers-reduced-motion: skip animation, render at final state.
+    if (typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setVisible(true);
       return;
     }
-    if (isInView) controls.start("visible");
-  }, [isInView, controls, reduced]);
+    const node = ref.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setVisible(true);
+            if (once) io.disconnect();
+          } else if (!once) {
+            setVisible(false);
+          }
+        }
+      },
+      { threshold },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [threshold, once]);
 
-  const y =
-    direction === "up" ? distance : direction === "down" ? -distance : 0;
-  const x =
-    direction === "left" ? distance : direction === "right" ? -distance : 0;
+  const yOff = direction === "up" ? distance : direction === "down" ? -distance : 0;
+  const xOff = direction === "left" ? distance : direction === "right" ? -distance : 0;
+
+  const style: React.CSSProperties = visible
+    ? {
+        opacity: 1,
+        transform: "translate3d(0,0,0)",
+        transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+      }
+    : {
+        opacity: 0,
+        transform: `translate3d(${xOff}px, ${yOff}px, 0)`,
+      };
 
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={controls}
-      variants={{
-        hidden: {
-          opacity: reduced ? 1 : 0,
-          y: reduced ? 0 : y,
-          x: reduced ? 0 : x,
-        },
-        visible: {
-          opacity: 1,
-          y: 0,
-          x: 0,
-          transition: {
-            duration: reduced ? 0 : duration,
-            delay: reduced ? 0 : delay,
-            ease: [0.16, 1, 0.3, 1],
-          },
-        },
-      }}
-      className={cn(className)}
-    >
+    <div ref={ref} className={cn(className)} style={style}>
       {children}
-    </motion.div>
+    </div>
   );
 }

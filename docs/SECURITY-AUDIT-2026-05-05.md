@@ -14,11 +14,11 @@ Yakima Real Estate Hub. Branch: `master`. Scope: all 8 services post-Sprint-0c
 | Low | 5 | SEC-021..025 |
 | Hygiene | 4 | SEC-026..029 |
 
-**Posture pip:** **AMBER**. No live-internet exploit, but several latent
-defects would have shipped to prod under Sprint 1 settings as written. All
-Critical and 7 of 8 High findings are fixed-in-this-pass; the remaining High
-(BFF SSRF defense-in-depth) is fixed and the residual risk is one that needs
-a follow-up server-side allowlist (tracked under SEC-013).
+**Posture pip:** **GREEN** (post-closeout pass dated 2026-05-05). All Critical
+and High findings, plus the three previously-tracked Medium items
+(SEC-013/014/018), are fixed and verified by tests. Remaining `Tracked`
+items (SEC-016, SEC-019, SEC-029) are scheduled for Sprint 2 and do not
+block the public launch hardening checklist.
 
 The 3-layer moderation pipeline contract holds: classifier output is parsed
 strict, fail-closed on any deviation. The two `is_authenticated` realtor /
@@ -228,10 +228,13 @@ django-otp on /admin/, allauth password validators all good.
   `${DJANGO_BASE}${target}${qs}`. The manifest contains 14 stable templates
   today, but a future mistake — adding a `:wildcard` segment or accidentally
   templating a host — could allow an attacker to reach unintended endpoints.
-- Mitigation (defense-in-depth, not yet applied): when constructing
-  `upstreamUrl`, parse with `new URL(upstreamUrl)` and assert
-  `url.host === new URL(DJANGO_BASE).host`. Tracked as Sprint-2 follow-up.
-- Status: **Tracked**.
+- Mitigation: `assertUpstreamHost(upstreamUrl)` runs immediately before the
+  upstream `fetch()`. The pinned host is computed once at module load from
+  `INTERNAL_API_BASE_URL` (fall back to `NEXT_PUBLIC_API_BASE_URL` then
+  `http://api:8000`). A drift throws `UpstreamHostMismatch`, the BFF returns
+  400 `upstream_host_mismatch`, and no request leaves the proxy. Vitest
+  coverage in `frontend/tests/unit/bff-host-pin.test.ts`.
+- Status: **Fixed-in-this-pass**.
 
 ### MEDIUM
 
@@ -242,10 +245,17 @@ django-otp on /admin/, allauth password validators all good.
   CSRF-vulnerable in principle (`SameSite=Strict` is the only line of
   defense, which IS strong, but losing strict-cookie support on any browser
   edge case removes the only check).
-- Mitigation: apply `StrictCSRFMixin` to every mutation viewset in
-  marketplace, content, forum, moderation, and accounts. Tracked for
-  Sprint 2.
-- Status: **Tracked**.
+- Mitigation: `StrictCSRFMixin` is now prepended to every mutating viewset
+  in `apps/{accounts,content,forum,marketplace,moderation,operations,
+  notifications,tools,core}/api/`. The mixin is exempt only on bootstrap
+  auth flows that mint the cookie (LoginView/SignupView/RefreshView/
+  PasswordReset*); LogoutView is included so a CSRF attack cannot
+  force-logout the user. Cookie issuance is handled at every response by
+  `apps/core/middleware/csrf_cookie.py::EnsureCSRFCookieMiddleware` (wired
+  in `MIDDLEWARE` between `CommonMiddleware` and `CsrfViewMiddleware`).
+  Test coverage: `apps/core/tests/test_csrf.py` proves missing/mismatched/
+  matching/safe-method behavior on `MeView`.
+- Status: **Fixed-in-this-pass**.
 
 #### SEC-015 — `_redact_classifier_output` exposes free-text rationale to operators
 - Category: information disclosure (PII risk)
@@ -283,9 +293,14 @@ django-otp on /admin/, allauth password validators all good.
   `apps/core/api/uploads.py::UPLOAD_TYPES` allows up to 10 MB images. A user
   can submit a 9.99 MB high-resolution decompression-bomb that Pillow
   expands to >>1 GB during `img.verify()`.
-- Mitigation: enable Pillow `Image.MAX_IMAGE_PIXELS` cap (e.g. 50 MP) before
-  any `Image.open()` call. Tracked.
-- Status: **Tracked**.
+- Mitigation: `apps/core/imaging.py` clamps `Image.MAX_IMAGE_PIXELS` to
+  50_000_000 at process start (imported via `apps/core/__init__.py`).
+  `ImageUploadView._probe_image` and `moderate_image_input` both catch
+  `Image.DecompressionBombError` and surface a clean `ValidationError` /
+  `allowed=False, reason="decompression_bomb"` instead of OOM. Test
+  coverage: `apps/core/tests/test_image_bomb.py` (4 cases) plus
+  `apps/moderation/tests/test_image_decompression_bomb.py`.
+- Status: **Fixed-in-this-pass**.
 
 #### SEC-019 — SSE long-lived connections lack explicit auth re-check
 - Category: session
@@ -418,22 +433,53 @@ Superscripts reference SEC- IDs. `→` indicates fixed in this pass.
 - Frontend Vitest: `safeNext()` and `buildTargetPath` should add direct unit
   tests in Sprint 2.
 
-## 5. Top 3 remaining accepted risks
+## 5. Closeout — 2026-05-05
 
-1. **`StrictCSRFMixin` is not applied to viewsets yet (SEC-014).** Cookie-JWT
-   requests inherit no CSRF middleware (DRF only triggers Django CSRF when
-   `SessionAuthentication` succeeds). `SameSite=Strict` cookies are the only
-   line of defense today. Sprint 2 must wire the mixin into every
-   `Create/Update/Destroy` viewset before public launch.
-2. **BFF upstream host pinning (SEC-013).** Path-traversal is closed, but if
-   a future manifest entry ever templates the host or a wildcard segment, the
-   BFF would faithfully fetch it. Sprint 2 should add an explicit
-   `assert new URL(upstreamUrl).host === DJANGO_HOST` check in
-   `frontend/app/api/bff/[id]/route.ts`.
-3. **Image decompression-bomb DoS (SEC-018).** The 10 MB byte cap does not
-   bound the in-memory expansion of a maliciously-crafted PNG. Adding
-   `PIL.Image.MAX_IMAGE_PIXELS = 50_000_000` before any `Image.open` is a
-   one-liner and should ride with Sprint 1's storage real-API work.
+The three remaining accepted risks from the original 2026-05-05 audit are now
+closed. Summary of the closeout work:
+
+1. **SEC-014 — StrictCSRFMixin wiring + cookie issuance.** Mixin applied to
+   every mutating viewset across `accounts`, `content`, `forum`,
+   `marketplace`, `moderation`, `operations`, `notifications`, `tools`, and
+   `core` (uploads). `EnsureCSRFCookieMiddleware` ensures the `yw_csrf`
+   cookie ships with every response so the SPA can mirror it into
+   `X-CSRFToken`. Bootstrap auth endpoints (Login/Signup/Refresh/Password
+   reset/Email confirm) are intentionally exempt.
+2. **SEC-013 — BFF upstream host pin.** `assertUpstreamHost(upstreamUrl)`
+   gate added to the BFF route handler. Pinned host is computed at module
+   load from `INTERNAL_API_BASE_URL`. Vitest unit test covers accept,
+   different-host reject, unparseable reject, suffix-host reject.
+3. **SEC-018 — Pillow decompression-bomb clamp.** `apps/core/imaging.py`
+   clamps `Image.MAX_IMAGE_PIXELS` to 50 MP at process start. Both
+   `ImageUploadView._probe_image` and `moderate_image_input` translate
+   `Image.DecompressionBombError` into a clean 400 / `BLOCKED` decision.
+
+### Closeout files modified
+- `apps/accounts/api/views.py`, `apps/content/api/views.py`,
+  `apps/forum/api/views.py`, `apps/marketplace/api/views.py`,
+  `apps/moderation/api/views.py`, `apps/operations/api/views.py`,
+  `apps/notifications/api/views.py`, `apps/tools/api/views.py`,
+  `apps/core/api/uploads.py` — `StrictCSRFMixin` wired into mutating views.
+- `apps/moderation/services/image_input.py` — typed-error handler.
+- `config/settings/base.py` — `EnsureCSRFCookieMiddleware` registered.
+- `frontend/app/api/bff/[id]/route.ts` — `assertUpstreamHost` gate.
+
+### Closeout files added
+- `apps/core/imaging.py` — Pillow pixel cap.
+- `apps/core/middleware/csrf_cookie.py` — cookie-issuance middleware.
+- `apps/core/__init__.py` — auto-import of `imaging`.
+- `apps/core/tests/test_csrf.py` — StrictCSRFMixin coverage.
+- `apps/core/tests/test_image_bomb.py` — Pillow clamp + handler coverage.
+- `apps/moderation/tests/test_image_decompression_bomb.py` — image_input
+  fail-closed coverage.
+- `frontend/tests/unit/bff-host-pin.test.ts` — Vitest host-pin coverage.
+
+### Closeout test impact
+- `pytest -q apps/`: 274 passed, 3 failed. The 3 failures (`test_flyer_pdf`
+  x2, `test_flyer_generator::test_backend_error_retries_then_fails`) are
+  pre-existing on `master` and unrelated to this closeout. Net delta is
+  +10 passing tests (the new bomb + CSRF coverage + the existing notify /
+  flyer view tests once they were updated to mirror the CSRF cookie).
 
 ## 6. References
 

@@ -90,6 +90,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "apps.core.middleware.csrf_cookie.EnsureCSRFCookieMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django_otp.middleware.OTPMiddleware",
@@ -160,8 +161,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LOGIN_URL = "account_login"
-LOGIN_REDIRECT_URL = "core:profile"
-LOGOUT_REDIRECT_URL = "core:home"
+# Next.js owns the dashboard + landing post-login (ADR-0005). allauth flows return to /api host
+# so these are absolute paths (Caddy passes them to the frontend container in the split deploy,
+# while in API-only smoke tests Django simply returns the absolute URL in Location).
+LOGIN_REDIRECT_URL = "/dashboard/"
+LOGOUT_REDIRECT_URL = "/"
 
 # ─── allauth ─────────────────────────────────────────────────────────────
 SITE_ID = 1

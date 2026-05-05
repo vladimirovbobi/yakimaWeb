@@ -32,6 +32,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.core.api.authentication import clear_jwt_cookies, set_jwt_cookies
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsRealtor
 from apps.tools.api.serializers import ToolUsageSerializer
@@ -149,7 +150,7 @@ class LoginView(generics.GenericAPIView):
         return response
 
 
-class LogoutView(APIView):
+class LogoutView(StrictCSRFMixin, APIView):
     """POST /api/v1/auth/logout/ — blacklist refresh, clear cookies."""
 
     permission_classes = [permissions.IsAuthenticated]
@@ -262,7 +263,7 @@ class PasswordResetConfirmView(generics.GenericAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # 2FA (TOTP)
 # ──────────────────────────────────────────────────────────────────────────
-class TOTPSetupView(APIView):
+class TOTPSetupView(StrictCSRFMixin, APIView):
     """POST /api/v1/auth/2fa/totp/setup/ — return provisioning URI + secret."""
 
     permission_classes = [permissions.IsAuthenticated]
@@ -281,7 +282,7 @@ class TOTPSetupView(APIView):
         return Response(ser.data, status=status.HTTP_201_CREATED)
 
 
-class TOTPVerifyView(generics.GenericAPIView):
+class TOTPVerifyView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /api/v1/auth/2fa/totp/verify/ — confirm device with a 6-digit token."""
 
     serializer_class = TOTPDeviceVerifySerializer
@@ -305,7 +306,7 @@ class TOTPVerifyView(generics.GenericAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # /me/
 # ──────────────────────────────────────────────────────────────────────────
-class MeView(generics.RetrieveUpdateAPIView):
+class MeView(StrictCSRFMixin, generics.RetrieveUpdateAPIView):
     """GET/PATCH /api/v1/me/."""
 
     permission_classes = [permissions.IsAuthenticated]
@@ -327,7 +328,7 @@ class MeView(generics.RetrieveUpdateAPIView):
                         status=super_response.status_code)
 
 
-class MyRealtorProfileView(generics.RetrieveUpdateAPIView):
+class MyRealtorProfileView(StrictCSRFMixin, generics.RetrieveUpdateAPIView):
     """GET/PATCH /api/v1/me/realtor/."""
 
     permission_classes = [permissions.IsAuthenticated, IsRealtor]
@@ -340,7 +341,7 @@ class MyRealtorProfileView(generics.RetrieveUpdateAPIView):
         return profile
 
 
-class MyVendorProfileView(generics.RetrieveUpdateAPIView):
+class MyVendorProfileView(StrictCSRFMixin, generics.RetrieveUpdateAPIView):
     """GET/PATCH /api/v1/me/vendor/.
 
     GET works for any authenticated user — the frontend wizard relies on this
@@ -562,7 +563,7 @@ class MyActivityView(APIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Realtor verify + edit (private)
 # ──────────────────────────────────────────────────────────────────────────
-class RealtorVerifyView(generics.GenericAPIView):
+class RealtorVerifyView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /api/v1/realtor/verify/ — kick off ARELLO check via Celery."""
 
     serializer_class = RealtorVerifySerializer
@@ -597,7 +598,7 @@ class RealtorVerifyView(generics.GenericAPIView):
         return Response(body, status=status.HTTP_202_ACCEPTED)
 
 
-class RealtorProfilePartialUpdateView(generics.UpdateAPIView):
+class RealtorProfilePartialUpdateView(StrictCSRFMixin, generics.UpdateAPIView):
     """PATCH /api/v1/realtor/profile/ — bio + headshot + brokerage + phone."""
 
     permission_classes = [permissions.IsAuthenticated, IsRealtor]

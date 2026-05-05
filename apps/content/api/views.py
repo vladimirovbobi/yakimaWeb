@@ -16,6 +16,7 @@ from apps.content.models import (
     SocialEmbed,
     Tag,
 )
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.pagination import TimeCursorPagination
 from apps.core.api.permissions import IsOwnerOrReadOnly, IsRealtor
 from apps.core.api.throttling import CommentThrottle
@@ -148,7 +149,7 @@ class PublicCommentListView(generics.ListAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Public — Newsletter
 # ──────────────────────────────────────────────────────────────────────────
-class NewsletterSubscribeView(generics.CreateAPIView):
+class NewsletterSubscribeView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /api/public/v1/posts/newsletter/ — double-opt-in pending row."""
 
     queryset           = NewsletterSubscription.objects.all()
@@ -190,7 +191,7 @@ class SocialEmbedListView(generics.ListAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — Posts
 # ──────────────────────────────────────────────────────────────────────────
-class PostCreateView(generics.CreateAPIView):
+class PostCreateView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /api/v1/posts/ — verified realtors author blog posts.
 
     Goes through ModeratableMixin (post_save signal fires moderation task).
@@ -207,7 +208,7 @@ class PostCreateView(generics.CreateAPIView):
         )
 
 
-class PostUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class PostUpdateDestroyView(StrictCSRFMixin, generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/PUT/DELETE /api/v1/posts/<slug>/ — owner-only writes."""
 
     serializer_class   = PostCreateUpdateSerializer
@@ -226,7 +227,7 @@ class PostUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Private — Comments
 # ──────────────────────────────────────────────────────────────────────────
-class CommentCreateView(generics.CreateAPIView):
+class CommentCreateView(StrictCSRFMixin, generics.CreateAPIView):
     """POST /api/v1/posts/<post_slug>/comments/ — auto-moderated on save.
 
     Accepts multipart/form-data when an `image` is attached.
@@ -259,7 +260,7 @@ class CommentCreateView(generics.CreateAPIView):
         )
 
 
-class CommentUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class CommentUpdateDestroyView(StrictCSRFMixin, generics.RetrieveUpdateDestroyAPIView):
     """GET/PATCH/DELETE /api/v1/posts/comments/<id>/ — owner-only writes."""
 
     serializer_class   = CommentSerializer

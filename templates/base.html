@@ -1,50 +1,72 @@
-{% load static vite %}<!doctype html>
+{% load static %}<!doctype html>
+{# Minimal base for server-rendered Django flows (allauth + admin error pages). #}
+{# Marketing chrome lives in Next.js (ADR-0005). Legacy nav/footer removed in DEB-002. #}
 <html lang="en" class="bg-black">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080604">
-  <title>{% block title %}{{ SITE_NAME }} — {{ SITE_TAGLINE }}{% endblock %}</title>
-
+  <title>{% block title %}{{ SITE_NAME }}{% endblock %}</title>
   <meta name="description" content="{% block description %}{{ SITE_DESCRIPTION }}{% endblock %}">
+  <meta name="robots" content="noindex">
 
-  {# ─── OG / Twitter ─── #}
-  <meta property="og:site_name" content="{{ SITE_NAME }}">
-  <meta property="og:title" content="{% block og_title %}{{ SITE_NAME }}{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}{{ SITE_DESCRIPTION }}{% endblock %}">
-  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-  <meta property="og:url" content="{{ request.build_absolute_uri }}">
-  <meta property="og:image" content="{% block og_image %}{% static 'img/og-default.jpg' %}{% endblock %}">
-  <meta name="twitter:card" content="summary_large_image">
-
-  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
-  <link rel="alternate icon" href="{% static 'img/favicon.ico' %}">
-
-  {# ─── Vite-built assets ─── #}
-  <link rel="stylesheet" href="{% vite_css 'static/src/js/main.js' %}">
-
-  {# JSON-LD per-page #}
-  {% block jsonld %}{% endblock %}
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: ui-serif, Georgia, "Cormorant Garamond", serif;
+           background: #0D0904; color: #F5EFE0; margin: 0; min-height: 100vh; }
+    main { max-width: 28rem; margin: 0 auto; padding: 4rem 1.5rem; }
+    h1 { color: #DEC98A; font-size: 1.75rem; margin: 0 0 1rem; }
+    .label { text-transform: uppercase; letter-spacing: 0.22em;
+             font-size: 0.7rem; color: #BFA06A; }
+    .surface { background: #141008; border: 1px solid rgba(191,160,106,0.18);
+               padding: 2rem; border-radius: 4px; }
+    .input { width: 100%; padding: 0.6rem 0.8rem; background: #0D0904;
+             border: 1px solid #5A4A28; color: #F5EFE0; font: inherit;
+             border-radius: 3px; box-sizing: border-box; }
+    .btn { display: inline-block; padding: 0.6rem 1.4rem; border: 1px solid #BFA06A;
+           background: #BFA06A; color: #0D0904; text-decoration: none;
+           font-weight: 500; cursor: pointer; }
+    .btn-ghost { background: transparent; color: #F5EFE0; }
+    a { color: #DEC98A; }
+    .form-error { color: #E07A6A; font-size: 0.85rem; margin-top: 0.25rem; }
+    .form-help  { color: #706450; font-size: 0.8rem; margin-top: 0.25rem; }
+    .label-luxe, .h-page { /* shim — keep allauth templates rendering until they migrate */ }
+    .label-luxe { display: block; }
+    /* Map vrov-style class names referenced by allauth templates to base styles. */
+    .btn-gold { padding: 0.6rem 1.4rem; background: #BFA06A; color: #0D0904;
+                text-decoration: none; display: inline-block; border: 0; cursor: pointer; }
+    .btn-md { padding: 0.6rem 1.4rem; }
+    .btn-sm { padding: 0.45rem 1.05rem; font-size: 0.85rem; }
+    .btn-outline { padding: 0.6rem 1.4rem; border: 1px solid #BFA06A;
+                   background: transparent; color: #F5EFE0; text-decoration: none;
+                   display: inline-block; cursor: pointer; }
+    .text-mist { color: #CEC4A8; }
+    .text-dim  { color: #706450; }
+    .text-ivory { color: #F5EFE0; }
+    .text-gold-hi { color: #DEC98A; }
+    .h-page { font-size: 2rem; color: #DEC98A; }
+    .section-y { padding-top: 3rem; padding-bottom: 3rem; }
+    .container-page { max-width: 28rem; margin: 0 auto; padding: 0 1.5rem; }
+    .max-w-md { max-width: 28rem; }
+    .mt-3 { margin-top: 0.75rem; } .mt-6 { margin-top: 1.5rem; }
+    .mt-8 { margin-top: 2rem; }
+    .pt-2 { padding-top: 0.5rem; } .p-8 { padding: 2rem; }
+    .text-center { text-align: center; }
+    .space-y-5 > * + * { margin-top: 1.25rem; }
+    .space-y-2 > * + * { margin-top: 0.5rem; }
+    .text-xs  { font-size: 0.75rem; } .text-sm { font-size: 0.875rem; }
+    .underline { text-decoration: underline; }
+    .w-full { width: 100%; }
+    .block { display: block; } .inline-block { display: inline-block; }
+    .font-medium { font-weight: 500; }
+    .leading-relaxed { line-height: 1.7; }
+  </style>
 
   {% block extra_head %}{% endblock %}
 </head>
-
-<body class="min-h-screen flex flex-col" hx-headers='{"X-Requested-With":"htmx"}'>
-
-  {# Skip link for a11y #}
-  <a href="#main"
-     class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50
-            btn-gold btn-sm">Skip to content</a>
-
-  {% include "_components/_nav.html" %}
-
-  <main id="main" class="flex-1">
+<body>
+  <main>
     {% block content %}{% endblock %}
   </main>
-
-  {% include "_components/_footer.html" %}
-
-  <script type="module" src="{% vite_asset 'static/src/js/main.js' %}"></script>
-  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

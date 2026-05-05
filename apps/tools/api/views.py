@@ -14,6 +14,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.api.csrf import StrictCSRFMixin
 from apps.core.api.throttling import AIToolThrottle, ImageCompressorThrottle
 
 from ..models import Tool, ToolUsage, UsageStatus
@@ -138,7 +139,7 @@ def _enforce_rate_limit(user, tool: Tool) -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # Description writer
 # ──────────────────────────────────────────────────────────────────────────
-class DescriptionWriterRunView(generics.GenericAPIView):
+class DescriptionWriterRunView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /api/v1/tools/description/."""
 
     serializer_class = DescriptionWriterRequestSerializer
@@ -191,7 +192,7 @@ class DescriptionWriterRunView(generics.GenericAPIView):
 # ──────────────────────────────────────────────────────────────────────────
 # Furniture remover
 # ──────────────────────────────────────────────────────────────────────────
-class FurnitureRemoverRunView(generics.GenericAPIView):
+class FurnitureRemoverRunView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /api/v1/tools/furniture-remover/."""
 
     serializer_class = FurnitureRemoverRequestSerializer
@@ -253,7 +254,7 @@ def _safe_storage_url(path: str) -> str | None:
 # ──────────────────────────────────────────────────────────────────────────
 # Image compressor (Sprint 1.5)
 # ──────────────────────────────────────────────────────────────────────────
-class ImageCompressorRunView(generics.GenericAPIView):
+class ImageCompressorRunView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /api/v1/tools/image-compressor/.
 
     Stages the upload bytes in default_storage; queues a Celery task that
@@ -329,7 +330,7 @@ class FlyerPresetsView(generics.ListAPIView):
         ]
 
 
-class FlyerGeneratorRunView(generics.GenericAPIView):
+class FlyerGeneratorRunView(StrictCSRFMixin, generics.GenericAPIView):
     """POST /api/v1/tools/flyer-generator/."""
 
     serializer_class = FlyerRequestSerializer

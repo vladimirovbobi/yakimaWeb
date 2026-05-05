@@ -26,6 +26,14 @@ def member(db):
 def auth_client(member):
     c = APIClient()
     c.force_authenticate(user=member)
+    # Prime + mirror the yw_csrf cookie so StrictCSRFMixin's double-submit
+    # check passes on POST/PATCH. EnsureCSRFCookieMiddleware sets the cookie
+    # on any GET; we mirror it into the default header for subsequent unsafe
+    # methods.
+    c.get("/api/v1/me/")
+    cookie = c.cookies.get("yw_csrf")
+    if cookie is not None:
+        c.defaults["HTTP_X_CSRFTOKEN"] = cookie.value
     return c
 
 

@@ -22,6 +22,37 @@ const DJANGO_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   "http://api:8000";
 
+// Defense-in-depth host pin: even with manifest-only routing and path-traversal
+// rejection in `buildTargetPath`, a future manifest mistake (e.g. someone
+// templating the host or adding a wildcard segment that happens to start with
+// `//`) could let `upstreamUrl` resolve to an attacker-controlled origin. We
+// pin the upstream host once at module load and assert match before fetch.
+const ALLOWED_UPSTREAM_HOST = (() => {
+  try {
+    return new URL(DJANGO_BASE).host;
+  } catch {
+    return "";
+  }
+})();
+
+export class UpstreamHostMismatch extends Error {
+  constructor(actual: string) {
+    super(`bff_upstream_host_mismatch:${actual}`);
+  }
+}
+
+export function assertUpstreamHost(upstreamUrl: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(upstreamUrl);
+  } catch {
+    throw new UpstreamHostMismatch("unparseable");
+  }
+  if (!ALLOWED_UPSTREAM_HOST || parsed.host !== ALLOWED_UPSTREAM_HOST) {
+    throw new UpstreamHostMismatch(parsed.host);
+  }
+}
+
 function corsBlock(): NextResponse {
   return NextResponse.json(
     { type: "about:blank", title: "forbidden", status: 403 },
@@ -126,6 +157,18 @@ async function handle(
     : "";
 
   const upstreamUrl = `${DJANGO_BASE}${target}${qs}`;
+
+  // Verify the resolved URL still points at our pinned upstream host.
+  // If the manifest ever gets a path that resolves outside DJANGO_BASE, this
+  // throws before any network call leaves the BFF.
+  try {
+    assertUpstreamHost(upstreamUrl);
+  } catch {
+    return NextResponse.json(
+      { type: "about:blank", title: "upstream_host_mismatch", status: 400 },
+      { status: 400 },
+    );
+  }
 
   // Forward cookies, CSRF token, and a trimmed set of safe headers.
   const cookieStore = await cookies();

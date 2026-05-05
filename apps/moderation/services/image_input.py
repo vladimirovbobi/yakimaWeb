@@ -69,12 +69,18 @@ def moderate_image_input(image_bytes: bytes) -> ImageInputDecision:
         log.error("Pillow missing; refusing image moderation")
         return ImageInputDecision(allowed=False, reason="pillow_missing")
 
+    # Decompression-bomb defense (SEC-018). The pixel cap clamp lives in
+    # apps.core.imaging and applies globally; we still surface the typed
+    # error here so the caller records a clean BLOCKED decision instead of a
+    # 500 from an unhandled bomb.
     try:
         img = Image.open(io.BytesIO(image_bytes))
         img.verify()
         # verify() invalidates the file pointer; re-open for size probe.
         img = Image.open(io.BytesIO(image_bytes))
         width, height = img.size
+    except Image.DecompressionBombError:
+        return ImageInputDecision(allowed=False, reason="decompression_bomb")
     except Exception as exc:  # noqa: BLE001
         return ImageInputDecision(
             allowed=False, reason=f"image_unreadable:{type(exc).__name__}"

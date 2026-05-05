@@ -1,22 +1,40 @@
-"""Sitemap generators."""
+"""Sitemap generators.
+
+Server-side sitemap remains because /sitemap.xml is a Caddy-routed Django endpoint.
+Frontend Next.js publishes its own at /sitemap.ts (preferred); this one stays as a
+canonical fallback for crawlers that hit the API host directly. URL paths are literal
+Next.js routes (ADR-0005 split — no Django template routes remain post DEB-002).
+"""
 from django.contrib.sitemaps import Sitemap
-from django.urls import reverse
+
+
+# Static frontend routes; literal paths to avoid coupling to Django URL conf.
+_STATIC_PATHS: tuple[tuple[str, str, float], ...] = (
+    ("/",            "daily",   1.0),
+    ("/about",       "monthly", 0.6),
+    ("/blog",        "daily",   0.9),
+    ("/community",   "hourly",  0.9),
+    ("/services",    "daily",   0.85),
+    ("/tools",       "weekly",  0.7),
+    ("/videos",      "weekly",  0.5),
+    ("/guidelines",  "monthly", 0.4),
+    ("/privacy",     "yearly",  0.3),
+    ("/terms",       "yearly",  0.3),
+)
 
 
 class StaticSitemap(Sitemap):
-    priority = 0.8
-    changefreq = "weekly"
-
     def items(self):
-        return ["core:home", "core:about", "core:guidelines",
-                "core:privacy", "core:terms",
-                "content:post_list", "content:videos",
-                "tools:index",
-                "forum:thread_list",
-                "marketplace:service_list"]
+        return list(_STATIC_PATHS)
 
     def location(self, item):
-        return reverse(item)
+        return item[0]
+
+    def changefreq(self, item):
+        return item[1]
+
+    def priority(self, item):
+        return item[2]
 
 
 class PostSitemap(Sitemap):
@@ -30,6 +48,9 @@ class PostSitemap(Sitemap):
     def lastmod(self, obj):
         return obj.updated_at
 
+    def location(self, obj):
+        return f"/blog/{obj.slug}/"
+
 
 class ServiceSitemap(Sitemap):
     priority = 0.6
@@ -42,6 +63,9 @@ class ServiceSitemap(Sitemap):
     def lastmod(self, obj):
         return obj.updated_at
 
+    def location(self, obj):
+        return f"/services/{obj.slug}/"
+
 
 class ForumSitemap(Sitemap):
     priority = 0.5
@@ -53,6 +77,9 @@ class ForumSitemap(Sitemap):
 
     def lastmod(self, obj):
         return obj.updated_at
+
+    def location(self, obj):
+        return f"/community/threads/{obj.slug}/"
 
 
 SITEMAPS = {

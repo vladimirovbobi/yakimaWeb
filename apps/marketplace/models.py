@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
-from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
@@ -61,8 +60,9 @@ class Service(ModeratableMixin, TimeStampedModel):
             self.slug = base[:160]
         super().save(*args, **kwargs)
 
-    def get_absolute_url(self):
-        return reverse("marketplace:service_detail", kwargs={"slug": self.slug})
+    def get_absolute_url(self) -> str:
+        # Next.js public route (ADR-0005 split). Server-rendered legacy templates removed in DEB-002.
+        return f"/services/{self.slug}/"
 
     @property
     def price_from(self) -> Decimal | None:
@@ -128,8 +128,9 @@ class Bundle(ModeratableMixin, TimeStampedModel):
             self.slug = (slugify(self.vendor.business_name) + "-" + slugify(self.name))[:160]
         super().save(*args, **kwargs)
 
-    def get_absolute_url(self):
-        return reverse("marketplace:bundle_detail", kwargs={"slug": self.slug})
+    def get_absolute_url(self) -> str:
+        # Next.js public route (ADR-0005 split). Server-rendered legacy templates removed in DEB-002.
+        return f"/services/bundles/{self.slug}/"
 
 
 class BundleItem(TimeStampedModel):

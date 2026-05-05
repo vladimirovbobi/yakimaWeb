@@ -63,6 +63,17 @@ def good_payload():
     }
 
 
+def _csrf_authed(user):
+    """APIClient force-authenticated with a primed yw_csrf double-submit token."""
+    c = APIClient()
+    c.force_authenticate(user=user)
+    c.get("/api/v1/me/")
+    cookie = c.cookies.get("yw_csrf")
+    if cookie is not None:
+        c.defaults["HTTP_X_CSRFTOKEN"] = cookie.value
+    return c
+
+
 def _approve():
     """A moderation result that lets the task proceed."""
     obj = MagicMock()
@@ -84,8 +95,7 @@ def _block(reason: str = "policy_violation"):
 @pytest.mark.usefixtures("_flush_cache")
 class TestFlyerGeneratorRunView:
     def test_returns_202_and_queues_task(self, db, user, flyer_tool, good_payload):
-        client = APIClient()
-        client.force_authenticate(user=user)
+        client = _csrf_authed(user)
         with (
             patch("apps.tools.api.views.run_flyer_generator", create=True),
             patch("apps.tools.tasks.run_flyer_generator.delay") as delay,
@@ -115,8 +125,7 @@ class TestFlyerGeneratorRunView:
         assert resp.status_code in (401, 403)
 
     def test_invalid_preset_rejected(self, db, user, flyer_tool, good_payload):
-        client = APIClient()
-        client.force_authenticate(user=user)
+        client = _csrf_authed(user)
         good_payload["preset_slug"] = "nope"
         resp = client.post(
             reverse("v1:tools-flyer-generator"),
@@ -127,8 +136,7 @@ class TestFlyerGeneratorRunView:
         assert "preset" in str(resp.json()).lower()
 
     def test_too_few_photos_rejected(self, db, user, flyer_tool, good_payload):
-        client = APIClient()
-        client.force_authenticate(user=user)
+        client = _csrf_authed(user)
         good_payload["photo_urls"] = []
         resp = client.post(
             reverse("v1:tools-flyer-generator"),
@@ -138,8 +146,7 @@ class TestFlyerGeneratorRunView:
         assert resp.status_code == 400
 
     def test_too_many_photos_rejected(self, db, user, flyer_tool, good_payload):
-        client = APIClient()
-        client.force_authenticate(user=user)
+        client = _csrf_authed(user)
         good_payload["photo_urls"] = [f"https://cdn.example.com/{i}.jpg" for i in range(6)]
         resp = client.post(
             reverse("v1:tools-flyer-generator"),
@@ -149,8 +156,7 @@ class TestFlyerGeneratorRunView:
         assert resp.status_code == 400
 
     def test_long_headline_rejected(self, db, user, flyer_tool, good_payload):
-        client = APIClient()
-        client.force_authenticate(user=user)
+        client = _csrf_authed(user)
         good_payload["creative_text"]["headline"] = "x" * 81
         resp = client.post(
             reverse("v1:tools-flyer-generator"),

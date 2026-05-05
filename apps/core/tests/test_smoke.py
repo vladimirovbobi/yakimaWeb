@@ -1,29 +1,24 @@
-"""Smoke tests — every public page returns 200, base.html renders, healthz alive."""
+"""Smoke tests — Django still serves /healthz, /sitemap.xml, /robots.txt post-DEB-002.
+
+Marketing pages (/, /about, /guidelines, /privacy, /terms) are owned by Next.js
+and tested via Playwright in frontend/tests/e2e/. The /accounts/profile/ route
+moved to Next.js (/dashboard) gated by JWT cookie middleware.
+"""
 import pytest
-from django.urls import reverse
 
 
 @pytest.mark.django_db
-class TestPublicPages:
-    @pytest.mark.parametrize("url_name", ["core:home", "core:about", "core:guidelines",
-                                          "core:privacy", "core:terms"])
-    def test_returns_200(self, client, url_name):
-        r = client.get(reverse(url_name))
-        assert r.status_code == 200
-
-    def test_home_has_brand(self, client):
-        r = client.get(reverse("core:home"))
-        assert b"Yakima Real Estate Hub" in r.content
-
+class TestServerSurfaces:
     def test_healthz(self, client):
         r = client.get("/healthz")
         assert r.status_code == 200
         assert b"ok" in r.content.lower()
 
+    def test_robots_txt(self, client):
+        r = client.get("/robots.txt")
+        assert r.status_code == 200
 
-@pytest.mark.django_db
-class TestProfileAuth:
-    def test_profile_redirects_anon(self, client):
-        r = client.get(reverse("core:profile"))
-        assert r.status_code == 302
-        assert "/accounts/login" in r["Location"]
+    def test_sitemap_xml(self, client):
+        r = client.get("/sitemap.xml")
+        assert r.status_code == 200
+        assert b"<urlset" in r.content
