@@ -206,12 +206,16 @@ services:
         condition: service_healthy
     networks: [yakimaweb-net]
 
-  # ─── Dedicated img-worker (Pillow-heavy tasks on `images` queue) ─────────
-  # Reuses root Dockerfile — same Django app code, different queue + name.
+  # ─── Dedicated img-worker (Pillow-heavy + Playwright + Claude CLI) ──────
+  # Builds the `img-runtime` stage which extends the api runtime with
+  # Playwright + Chromium (HTML→PDF for the flyer generator) and the
+  # Claude Code CLI (prototype flyer-generator backend).
   # Routing map: apps/core/celery_routes.py.
   # Tag tasks with `@shared_task(queue="images")` to land here.
   img-worker:
-    build: .
+    build:
+      context: .
+      target: img-runtime
     restart: unless-stopped
     command: celery -A config worker --loglevel=info --concurrency=2 -Q images -n img-worker@%h
     env_file:
@@ -222,6 +226,13 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      FLYER_BACKEND: ${FLYER_BACKEND:-claude_cli}
+    volumes:
+      # Mount host's Claude Code OAuth credentials so the prototype flyer
+      # backend can invoke `claude -p` with the user's Max subscription.
+      # Token refresh writes back through this bind. Read-write so refresh
+      # persists across container restarts.
+      - "${USERPROFILE:-${HOME}}/.claude:/root/.claude:rw"
     depends_on:
       db:
         condition: service_healthy
