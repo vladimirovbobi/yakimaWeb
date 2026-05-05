@@ -12,8 +12,15 @@ from apps.moderation.services.pipeline import moderate
 
 from .models import ToolUsage, UsageStatus
 from .services.description_writer import generate as gen_description
+from .services.flyer_generator import (
+    FlyerGenerationError,
+)
+from .services.flyer_generator import (
+    generate as gen_flyer,
+)
 from .services.flyer_pdf import FlyerPDFError
 from .services.flyer_pdf import render as render_flyer
+from .services.flyer_presets import get_preset
 from .services.furniture_remover import (
     FurnitureRemoverError,
 )
@@ -284,6 +291,140 @@ def run_image_compressor(self, usage_id: int) -> dict:
         "format": result.output_format,
         "runtime_ms": usage.duration_ms,
     }
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Flyer generator — HTML generation stage (Sprint 2)
+# ──────────────────────────────────────────────────────────────────────────
+def _strip_tags_for_moderation(html: str) -> str:
+    """Pull visible text out of HTML for the output moderation pass."""
+    try:
+        import bleach
+    except ImportError:
+        return html
+    return bleach.clean(html, tags=[], strip=True)[:8000]
+
+
+@shared_task(bind=True, max_retries=2, retry_backoff=True)
+def run_flyer_generator(self, usage_id: int) -> str:
+    """Generate flyer HTML via the active backend, then chain to PDF render.
+
+    Status flow:
+        QUEUED → RUNNING → (if blocked) BLOCKED, else still RUNNING and
+        render_flyer_pdf flips it to SUCCESS once the PDF is persisted.
+    """
+    usage = ToolUsage.objects.select_related("tool", "user").filter(pk=usage_id).first()
+    if usage is None:
+        return "missing"
+
+    meta = usage.input_meta or {}
+    preset_slug = meta.get("preset_slug") or ""
+    property_info = meta.get("property_info") or {}
+    creative_text = meta.get("creative_text") or {}
+    photo_urls = meta.get("photo_urls") or []
+    color_overrides = meta.get("color_overrides") or {}
+    font_overrides = meta.get("font_overrides") or {}
+
+    # Belt-and-suspenders preset check (the serializer already validated, but
+    # tasks can be replayed with stale state).
+    if get_preset(preset_slug) is None:
+        usage.status = UsageStatus.FAILED
+        usage.error = f"unknown preset_slug: {preset_slug!r}"
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return "failed_unknown_preset"
+
+    # Layer 1: moderate the realtor-supplied text BEFORE the LLM call.
+    import json as _json
+
+    payload_for_mod = _json.dumps(
+        {"property_info": property_info, "creative_text": creative_text},
+        default=str,
+    )
+    mod_in = moderate(payload_for_mod, target=None, context="tool_input")
+    if mod_in.action != "approve":
+        usage.status = UsageStatus.BLOCKED
+        usage.block_reason = f"input_moderation:{mod_in.reason[:32]}"
+        usage.error = "Input flagged by moderation."
+        usage.save(update_fields=["status", "block_reason", "error", "updated_at"])
+        return "blocked_input"
+
+    # Spend-cap pre-flight (free on the prototype path, but the abstraction
+    # is in place for the Gemini swap).
+    try:
+        check_budget()
+    except SpendCapExceeded as exc:
+        usage.status = UsageStatus.BLOCKED
+        usage.block_reason = "spend_cap_exceeded"
+        usage.error = str(exc)[:500]
+        usage.cost_usd = 0
+        usage.save(update_fields=["status", "block_reason", "error", "cost_usd", "updated_at"])
+        return "blocked_spend_cap"
+
+    usage.status = UsageStatus.RUNNING
+    usage.save(update_fields=["status", "updated_at"])
+    t0 = time.time()
+
+    try:
+        result = gen_flyer(
+            preset_slug=preset_slug,
+            property_info=property_info,
+            creative_text=creative_text,
+            photo_urls=photo_urls,
+            color_overrides=color_overrides,
+            font_overrides=font_overrides,
+        )
+    except FlyerGenerationError as exc:
+        log.warning("run_flyer_generator: backend error: %s", exc)
+        try:
+            countdown = 30 * (2**self.request.retries)
+            raise self.retry(exc=exc, countdown=countdown)
+        except self.MaxRetriesExceededError:
+            usage.status = UsageStatus.FAILED
+            usage.error = str(exc)[:500]
+            usage.duration_ms = int((time.time() - t0) * 1000)
+            usage.save(update_fields=["status", "error", "duration_ms", "updated_at"])
+            return "failed_max_retries"
+    except Exception as exc:
+        log.exception("run_flyer_generator: unexpected error")
+        usage.status = UsageStatus.FAILED
+        usage.error = str(exc)[:500]
+        usage.duration_ms = int((time.time() - t0) * 1000)
+        usage.save(update_fields=["status", "error", "duration_ms", "updated_at"])
+        return "failed_unhandled"
+
+    # Layer 2: moderate the visible-text portion of the generated HTML.
+    visible = _strip_tags_for_moderation(result.html)
+    mod_out = moderate(visible, target=None, context="tool_output")
+    if mod_out.action == "remove":
+        usage.status = UsageStatus.BLOCKED
+        usage.block_reason = f"output_moderation:{mod_out.reason[:32]}"
+        usage.error = "Output flagged by moderation."
+        usage.duration_ms = int((time.time() - t0) * 1000)
+        usage.save(update_fields=["status", "block_reason", "error", "duration_ms", "updated_at"])
+        return "blocked_output"
+
+    usage.tokens_in = result.tokens_in
+    usage.tokens_out = result.tokens_out
+    usage.cost_usd = result.cost_usd
+    usage.duration_ms = int((time.time() - t0) * 1000)
+    usage.output_meta = {
+        **(usage.output_meta or {}),
+        "html": result.html,
+        "html_length": len(result.html),
+        "preset_slug": preset_slug,
+        "backend_used": result.backend_used,
+        **(result.meta or {}),
+    }
+    # Status stays RUNNING — render_flyer_pdf flips it to SUCCESS.
+    usage.save()
+
+    try:
+        record_spend_usd(float(usage.cost_usd or 0))
+    except Exception:
+        log.exception("spend_cap.record_spend_usd failed (non-fatal)")
+
+    render_flyer_pdf.delay(usage.pk)
+    return "html_generated"
 
 
 # ──────────────────────────────────────────────────────────────────────────

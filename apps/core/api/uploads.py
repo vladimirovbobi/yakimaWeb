@@ -7,6 +7,7 @@ Accepts a single multipart `file` field. Saves to `default_storage` under
 and returns the storage URL the FE stores in form state. Image moderation
 is dispatched async (best-effort) on the `images` Celery queue.
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,12 +37,13 @@ class UploadThrottle(UserRateThrottle):
 
 
 UPLOAD_TYPES = {
-    "service-hero":     {"max_mb": 10, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
-    "service-gallery":  {"max_mb": 10, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
+    "service-hero": {"max_mb": 10, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
+    "service-gallery": {"max_mb": 10, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
     "vendor-portfolio": {"max_mb": 10, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
-    "comment-image":    {"max_mb": 5,  "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
-    "user-avatar":      {"max_mb": 5,  "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
-    "realtor-headshot": {"max_mb": 5,  "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
+    "comment-image": {"max_mb": 5, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
+    "user-avatar": {"max_mb": 5, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
+    "realtor-headshot": {"max_mb": 5, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
+    "flyer-photo": {"max_mb": 10, "allowed_mimes": ("image/jpeg", "image/png", "image/webp")},
 }
 
 # Map filename suffix to canonical mime — we don't trust client-supplied content_type alone.
@@ -63,7 +65,7 @@ def _probe_image(blob: bytes) -> str:
     try:
         img = Image.open(BytesIO(blob))
         img.verify()
-    except (UnidentifiedImageError, Exception) as exc:  # noqa: BLE001
+    except (UnidentifiedImageError, Exception) as exc:
         raise ValidationError({"file": "File is not a valid image."}) from exc
 
     fmt = (img.format or "").lower()

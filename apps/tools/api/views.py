@@ -1,4 +1,5 @@
 """Tools API views — public meta + private run dispatch + task-status polling + SSE."""
+
 from __future__ import annotations
 
 import uuid
@@ -16,11 +17,15 @@ from rest_framework.views import APIView
 from apps.core.api.throttling import AIToolThrottle, ImageCompressorThrottle
 
 from ..models import Tool, ToolUsage, UsageStatus
+from ..services.flyer_presets import list_presets
 from ..services.rate_limit import check_and_consume
 from ..services.sse import stream_task_status
 from .serializers import (
     DescriptionWriterRequestSerializer,
     DescriptionWriterResponseSerializer,
+    FlyerPresetSerializer,
+    FlyerRequestSerializer,
+    FlyerResponseSerializer,
     FurnitureRemoverRequestSerializer,
     FurnitureRemoverResponseSerializer,
     ImageCompressorRequestSerializer,
@@ -67,6 +72,18 @@ TOOL_META: list[dict[str, Any]] = [
         "requires_auth": True,
         "avg_runtime_seconds": 4,
         "rate_limit_per_hour": 60,
+    },
+    {
+        "tool_id": "flyer-generator",
+        "name": "Realtor Flyer Generator",
+        "description": (
+            "Pick a design preset, drop in property details and creative copy, "
+            "get a print-ready PDF flyer in about a minute. Six curated styles."
+        ),
+        "category": "design",
+        "requires_auth": True,
+        "avg_runtime_seconds": 90,
+        "rate_limit_per_hour": 5,
     },
 ]
 TOOL_META_BY_ID = {t["tool_id"]: t for t in TOOL_META}
@@ -162,11 +179,13 @@ class DescriptionWriterRunView(generics.GenericAPIView):
         )
         # Reuse existing Celery task — moderates input, calls Gemini, persists.
         from apps.tools.tasks import run_description_writer
+
         run_description_writer.delay(usage.pk)
 
         body = {"task_id": usage.pk, "status": UsageStatus.QUEUED}
-        return Response(DescriptionWriterResponseSerializer(body).data,
-                        status=status.HTTP_202_ACCEPTED)
+        return Response(
+            DescriptionWriterResponseSerializer(body).data, status=status.HTTP_202_ACCEPTED
+        )
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -210,6 +229,7 @@ class FurnitureRemoverRunView(generics.GenericAPIView):
         )
 
         from apps.tools.tasks import run_furniture_remover
+
         run_furniture_remover.delay(usage.pk)
 
         body = {
@@ -218,8 +238,9 @@ class FurnitureRemoverRunView(generics.GenericAPIView):
             "original_url": _safe_storage_url(upload_path),
             "result_url": None,
         }
-        return Response(FurnitureRemoverResponseSerializer(body).data,
-                        status=status.HTTP_202_ACCEPTED)
+        return Response(
+            FurnitureRemoverResponseSerializer(body).data, status=status.HTTP_202_ACCEPTED
+        )
 
 
 def _safe_storage_url(path: str) -> str | None:
@@ -270,11 +291,79 @@ class ImageCompressorRunView(generics.GenericAPIView):
         )
 
         from apps.tools.tasks import run_image_compressor
+
         run_image_compressor.delay(usage.pk)
 
         body = {"task_id": usage.pk, "status": UsageStatus.QUEUED}
         return Response(
             ImageCompressorResponseSerializer(body).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Flyer generator (Sprint 2)
+# ──────────────────────────────────────────────────────────────────────────
+class FlyerPresetsView(generics.ListAPIView):
+    """GET /api/public/v1/tools/flyer-generator/presets/ — preset gallery."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []
+    serializer_class = FlyerPresetSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return [
+            {
+                "slug": preset.slug,
+                "name": preset.name,
+                "blurb": preset.blurb,
+                "inspiration": preset.inspiration,
+                "palette": preset.palette,
+                "fonts": preset.fonts,
+                "layout_brief": preset.layout_brief,
+                "preview_image": preset.preview_image,
+                "palette_token_names": preset.palette_token_names,
+            }
+            for preset in list_presets()
+        ]
+
+
+class FlyerGeneratorRunView(generics.GenericAPIView):
+    """POST /api/v1/tools/flyer-generator/."""
+
+    serializer_class = FlyerRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AIToolThrottle]
+
+    def post(self, request, *args, **kwargs):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        tool = _get_enabled_tool_or_400("flyer-generator")
+        _enforce_rate_limit(request.user, tool)
+
+        d = ser.validated_data
+        usage = ToolUsage.objects.create(
+            user=request.user,
+            tool=tool,
+            input_meta={
+                "preset_slug": d["preset_slug"],
+                "property_info": d["property_info"],
+                "creative_text": d["creative_text"],
+                "photo_urls": d["photo_urls"],
+                "color_overrides": d.get("color_overrides") or {},
+                "font_overrides": d.get("font_overrides") or {},
+            },
+        )
+
+        from apps.tools.tasks import run_flyer_generator
+
+        run_flyer_generator.delay(usage.pk)
+
+        body = {"task_id": usage.pk, "status": UsageStatus.QUEUED}
+        return Response(
+            FlyerResponseSerializer(body).data,
             status=status.HTTP_202_ACCEPTED,
         )
 
