@@ -10,6 +10,7 @@ import SignInPrompt from "@/components/auth/SignInPrompt";
 import { Card, CardBody } from "@/components/ui/Card";
 import { safeServerFetch } from "@/lib/api/server";
 import { getCurrentUser } from "@/lib/auth/server";
+import { servicePlaceholder } from "@/lib/placeholders";
 import type { Pagination, Review, Service } from "@/lib/api/types";
 import InquiryForm from "./InquiryForm";
 import ServiceTabs from "./ServiceTabs";
@@ -28,13 +29,16 @@ export async function generateMetadata({
     { cache: "no-store" },
   );
   if (!service) return { title: "Service" };
+  const heroImg =
+    service.hero_image_url ||
+    servicePlaceholder(service.slug || service.id);
   return {
     title: service.title,
     description: service.tagline,
     openGraph: {
       title: service.title,
       description: service.tagline,
-      images: service.hero_image_url ? [service.hero_image_url] : undefined,
+      images: [heroImg],
     },
   };
 }
@@ -63,12 +67,11 @@ export default async function ServiceDetailPage({ params }: ServiceDetailProps) 
 
   if (!service) notFound();
 
+  const heroFallback = servicePlaceholder(service.slug || service.id);
   const gallery =
     service.gallery && service.gallery.length > 0
       ? service.gallery
-      : service.hero_image_url
-        ? [service.hero_image_url]
-        : [];
+      : [service.hero_image_url || heroFallback];
 
   return (
     <>

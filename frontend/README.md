@@ -88,6 +88,11 @@ Asset paths:
 | Apple touch icon | `public/apple-touch-icon.png` | `scripts/generate_favicons.py` |
 | PWA icons | `public/icon-192.png`, `public/icon-512.png` | `scripts/generate_favicons.py` |
 | Hero placeholders | `public/img/hero/hero-{home,blog,services,community,tools}.jpg` | `scripts/generate_hero_placeholders.py` |
+| Post placeholders (10) | `public/img/posts/post-{1..10}.jpg` | `scripts/generate_post_placeholders.py` |
+| Service placeholders (12) | `public/img/services/service-{1..12}.jpg` | `scripts/generate_service_placeholders.py` |
+| Avatar placeholders (8) | `public/img/avatars/avatar-{1..8}.jpg` | `scripts/generate_avatar_placeholders.py` |
+| Vendor logo placeholders (8) | `public/img/vendors/vendor-logo-{1..8}.jpg` | `scripts/generate_vendor_logo_placeholders.py` |
+| Forum thread placeholders (6) | `public/img/threads/thread-{1..6}.jpg` | `scripts/generate_thread_placeholders.py` |
 | Furniture remover demo | `public/img/samples/furniture-remover/{before,after}-{1,2,3}.jpg` | `scripts/generate_furniture_remover_samples.py` |
 | Empty-state illustrations | `public/img/empty/empty-{leads,posts,services,notifications,search}.svg` | hand-authored SVG |
 | OG image samples | `public/og-samples/og-{blog,marketplace,forum}.png` | `manage.py regen_og_images --demo` |
@@ -96,6 +101,36 @@ CSS color tokens are exposed as both Tailwind classes (`bg-gold`, `text-ivory`)
 and CSS variables in `app/globals.css` (`--yw-gold`, `--yw-ivory`, etc.) for
 use in custom CSS and embedded iframes.
 
+### Placeholder fallback (deterministic)
+
+The platform never shows a hollow card. `lib/placeholders.ts` exposes
+`postPlaceholder`, `servicePlaceholder`, `avatarPlaceholder`,
+`vendorLogoPlaceholder`, and `threadPlaceholder` — each takes a seed
+(usually a slug or id) and returns the same JPEG path on every reload.
+The hash is stable across server and client renders, so refresh always
+shows the same placeholder for the same item.
+
+Wired into:
+
+- `components/content/PostCard.tsx`, `Comment.tsx` — post hero + author avatar
+- `components/marketplace/ServiceCard.tsx` — service hero
+- `components/marketplace/VendorChip.tsx` — vendor logo
+- `components/forum/ThreadCard.tsx` — thread thumbnail
+- `app/(public)/blog/[slug]/page.tsx` — detail hero + author avatar
+- `app/(public)/services/[slug]/page.tsx` — gallery fallback
+- `app/(public)/services/vendors/[slug]/page.tsx` — vendor logo
+- `app/(public)/community/threads/[slug]/page.tsx` — author avatars (incl. replies)
+- `components/marketing/CuratedFeed.tsx` — homepage feed cards
+- All section heroes (`/blog`, `/services`, `/community`, `/tools`, `/`)
+
+To swap real photos in: drop the new file into the matching
+`public/img/<dir>/`, then update the API to return a real URL on the
+relevant model field. The fallback never fires once the API returns
+a non-null `hero_image_url` (or `logo_url` / `avatar_url`).
+
+Every demo image carries a tiny `[demo]` corner pip — easy to spot in
+production so swaps are obvious.
+
 ### Replace before launch
 
 Every generated asset is marked with `[demo]` or a `DEMO` watermark. Swap with
@@ -103,9 +138,12 @@ real art before going live:
 
 - [ ] Wordmark logo (final designer cut)
 - [ ] Hero photos (real Yakima Valley imagery — vineyards, riverfronts, downtown)
+- [ ] Post hero photos (real photography per post)
+- [ ] Service hero photos (vendor-supplied)
+- [ ] Vendor avatars + logos (vendor-supplied)
+- [ ] Forum thread thumbnails (or remove if not part of v1 visual scope)
 - [ ] Founder / team photos for `/about`
 - [ ] Real photographer-supplied before/after pairs for the furniture-remover demo
-- [ ] Vendor avatar placeholders → real vendor headshots
 - [ ] Final OG image template review (typography, font files)
 
 Brand source of truth: `../docs/research/design-system-reference.md`.

@@ -59,7 +59,7 @@ export default async function ServicesIndexPage({
       { cache: "no-store" },
     ),
     safeServerFetch<Pagination<VendorProfile>>(
-      "/api/public/v1/services/vendors/?featured=1&limit=5",
+      "/api/public/v1/vendors/?featured=1&limit=5",
       {},
       { cache: "no-store" },
     ),
@@ -75,6 +75,7 @@ export default async function ServicesIndexPage({
         subtitle="Photographers, lenders, junk removal, 3D tours - publish your packages or hire someone close to home. Lead-gen only. We don't take a cut."
         primary={{ label: "List your service", href: "/dashboard/vendor/onboard" }}
         secondary={{ label: "How it works", href: "/about#marketplace" }}
+        bgImage="/img/hero/hero-services.jpg"
       />
 
       <section className="section-y">

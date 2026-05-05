@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/server";
 import { safeServerFetch } from "@/lib/api/server";
+import EmptyState from "@/components/layout/EmptyState";
 import LeadCard, {
   type LeadCardData,
 } from "@/components/vendor/leads/LeadCard";
@@ -59,7 +60,16 @@ export default async function VendorLeadsPage({
       </ul>
 
       {results.length === 0 ? (
-        <p className="text-mist">No leads {status === "all" ? "yet" : `with status "${status}"`}.</p>
+        <EmptyState
+          kind="leads"
+          title={status === "all" ? "No leads yet" : `No "${status}" leads`}
+          body={status === "all"
+            ? "When buyers reach out about your services, their inquiries will land here."
+            : "Try a different status filter to see leads in another stage."}
+          action={status === "all"
+            ? undefined
+            : { label: "Show all leads", href: "/dashboard/vendor/leads" }}
+        />
       ) : (
         <ul className="grid gap-4">
           {results.map((lead) => (

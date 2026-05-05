@@ -33,7 +33,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.core.api.authentication import clear_jwt_cookies, set_jwt_cookies
 from apps.core.api.pagination import TimeCursorPagination
-from apps.core.api.permissions import IsRealtor, IsVendor
+from apps.core.api.permissions import IsRealtor
 from apps.tools.api.serializers import ToolUsageSerializer
 
 from ..models import CheckTrigger, RealtorProfile, VerificationStatus
@@ -61,8 +61,21 @@ User = get_user_model()
 # Helpers
 # ──────────────────────────────────────────────────────────────────────────
 def _issue_tokens_for(user) -> tuple[str, str]:
+    """Mint refresh + access JWTs with embedded role claims.
+
+    The delivery service (delivery/auth.py) relies on these custom claims to
+    authorize vendor-only operations without round-tripping to the DB. Keep
+    the claim names in sync with delivery.AuthenticatedUser.
+    """
     refresh = RefreshToken.for_user(user)
-    return str(refresh.access_token), str(refresh)
+    refresh["is_realtor"] = bool(getattr(user, "is_realtor", False))
+    refresh["is_vendor"] = bool(getattr(user, "is_vendor", False))
+    refresh["is_staff"] = bool(getattr(user, "is_staff", False))
+    access = refresh.access_token
+    access["is_realtor"] = refresh["is_realtor"]
+    access["is_vendor"] = refresh["is_vendor"]
+    access["is_staff"] = refresh["is_staff"]
+    return str(access), str(refresh)
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -77,12 +90,24 @@ class SignupView(generics.GenericAPIView):
     throttle_scope = "anon"
 
     def post(self, request, *args, **kwargs):
+        from django.db import IntegrityError, transaction
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        user = User.objects.create_user(
-            email=ser.validated_data["email"],
-            password=ser.validated_data["password"],
-        )
+        email = ser.validated_data["email"]
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    email=email,
+                    password=ser.validated_data["password"],
+                )
+        except IntegrityError:
+            # Email already exists. Do NOT leak that — return the same shape we
+            # would for a fresh signup. The intended owner gets the existing
+            # account flow via password-reset; an attacker learns nothing.
+            return Response(
+                {"detail": "If this email is available, a confirmation has been sent."},
+                status=status.HTTP_202_ACCEPTED,
+            )
         try:
             send_email_confirmation(request, user, signup=True)
         except Exception:  # noqa: BLE001 — email delivery failures must not break signup
@@ -153,16 +178,13 @@ class RefreshView(APIView):
             raise InvalidToken("No refresh cookie.")
         try:
             old = RefreshToken(raw_refresh)
-            new_access = str(old.access_token)
-            # Rotate: blacklist old, mint new
+            user = User.objects.get(id=old["user_id"])
+            # Rotate: blacklist old, mint new pair with current role claims.
             try:
                 old.blacklist()
             except TokenError:
                 pass
-            new_refresh = RefreshToken.for_user(
-                User.objects.get(id=old["user_id"])
-            )
-            new_refresh_str = str(new_refresh)
+            new_access, new_refresh_str = _issue_tokens_for(user)
         except (TokenError, KeyError, User.DoesNotExist) as exc:
             raise InvalidToken(str(exc)) from exc
 

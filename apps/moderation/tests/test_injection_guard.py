@@ -1,5 +1,4 @@
 """Tests for prompt injection defenses — wrap, pre-flag, parse."""
-import pytest
 
 from apps.moderation.services import injection_guard as ig
 

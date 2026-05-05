@@ -13,6 +13,7 @@ import FeaturedServices from "@/components/marketing/FeaturedServices";
 import { safeServerFetch } from "@/lib/api/server";
 import { getCurrentUser } from "@/lib/auth/server";
 import { formatDate, pluralize } from "@/lib/utils";
+import { avatarPlaceholder, postPlaceholder } from "@/lib/placeholders";
 import type { Comment, Pagination, Post } from "@/lib/api/types";
 
 interface PostDetailPageProps {
@@ -31,6 +32,8 @@ export async function generateMetadata({
   if (!post) return { title: "Post" };
 
   const url = `/blog/${post.slug}`;
+  const heroImg =
+    post.hero_image_url || postPlaceholder(post.slug || post.id);
   return {
     title: post.title,
     description: post.excerpt,
@@ -40,7 +43,7 @@ export async function generateMetadata({
       title: post.title,
       description: post.excerpt,
       url,
-      images: post.hero_image_url ? [post.hero_image_url] : undefined,
+      images: [heroImg],
       publishedTime: post.published_at,
       modifiedTime: post.updated_at,
       authors: [post.author.display_name],
@@ -49,7 +52,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
-      images: post.hero_image_url ? [post.hero_image_url] : undefined,
+      images: [heroImg],
     },
   };
 }
@@ -74,6 +77,8 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   if (!post) notFound();
 
+  const heroSrc = post.hero_image_url || postPlaceholder(post.slug || post.id);
+
   const related = await safeServerFetch<Pagination<Post>>(
     `/api/public/v1/posts/?limit=3&exclude_slug=${slug}`,
     {},
@@ -85,7 +90,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
-    image: post.hero_image_url || undefined,
+    image: heroSrc,
     author: { "@type": "Person", name: post.author.display_name },
     datePublished: post.published_at,
     dateModified: post.updated_at,
@@ -102,19 +107,17 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         {JSON.stringify(jsonLd)}
       </Script>
 
-      {post.hero_image_url && (
-        <div className="relative w-full aspect-[21/9] md:aspect-[21/8] bg-black overflow-hidden">
-          <Image
-            src={post.hero_image_url}
-            alt={post.title}
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
-        </div>
-      )}
+      <div className="relative w-full aspect-[21/9] md:aspect-[21/8] bg-black overflow-hidden">
+        <Image
+          src={heroSrc}
+          alt={post.title}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+      </div>
 
       <article className="section-y">
         <Container>
@@ -133,22 +136,16 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               {post.title}
             </h1>
             <div className="mt-8 flex flex-wrap items-center gap-4 pb-8 border-b border-gold/14">
-              {post.author.avatar_url ? (
-                <Image
-                  src={post.author.avatar_url}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className="rounded-full border border-gold/22"
-                />
-              ) : (
-                <div
-                  aria-hidden
-                  className="w-10 h-10 rounded-full bg-warm border border-gold/22 flex items-center justify-center text-gold"
-                >
-                  {post.author.display_name.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Image
+                src={
+                  post.author.avatar_url ||
+                  avatarPlaceholder(post.author.id || post.author.display_name)
+                }
+                alt=""
+                width={40}
+                height={40}
+                className="rounded-full border border-gold/22"
+              />
               <div>
                 <p className="text-ivory text-sm flex items-center gap-2">
                   {post.author.display_name}

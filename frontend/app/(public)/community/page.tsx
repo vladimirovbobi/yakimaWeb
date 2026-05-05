@@ -24,43 +24,38 @@ interface FlairOption {
 
 const FLAIRS: FlairOption[] = [
   {
-    slug: "buying",
-    name: "Buying",
-    description: "First-time buyers, comps, what to look out for.",
-  },
-  {
-    slug: "selling",
-    name: "Selling",
-    description: "Pricing, prep, when to sit and when to move.",
-  },
-  {
-    slug: "market",
-    name: "Market",
-    description: "Yakima Valley data, trends, real numbers.",
-  },
-  {
-    slug: "renting",
-    name: "Renting",
-    description: "Tenants, landlords, leases, the gray areas.",
-  },
-  {
-    slug: "ask",
-    name: "Ask Yakima",
+    slug: "question",
+    name: "Question",
     description: "Open questions to anyone with local knowledge.",
   },
   {
-    slug: "vendors",
-    name: "Vendors",
-    description: "Recommendations, reviews, who's actually any good.",
+    slug: "discussion",
+    name: "Discussion",
+    description: "Slow takes, sharp questions, neighborly debate.",
   },
   {
-    slug: "neighborhood",
-    name: "Neighborhoods",
-    description: "Selah vs Terrace Heights, schools, commute, vibe.",
+    slug: "help",
+    name: "Help Needed",
+    description: "Buyers, sellers, renters — ask the room.",
   },
   {
-    slug: "general",
-    name: "General",
+    slug: "local-news",
+    name: "Local News",
+    description: "What's actually happening in the Yakima Valley.",
+  },
+  {
+    slug: "market",
+    name: "Market Talk",
+    description: "Central Washington data, trends, real numbers.",
+  },
+  {
+    slug: "show-tell",
+    name: "Show & Tell",
+    description: "Renovations, listings, projects worth a look.",
+  },
+  {
+    slug: "off-topic",
+    name: "Off-Topic",
     description: "Local takes that don't fit anywhere else.",
   },
 ];
@@ -78,8 +73,9 @@ export default async function CommunityIndexPage() {
         eyebrow="Community"
         title="Real estate questions, market talk, local takes."
         subtitle="A Reddit-shaped forum for Central Washington real estate. AI-moderated, license-tagged, run by people who actually live here."
-        primary={{ label: "Browse threads", href: "/community/general" }}
+        primary={{ label: "Browse threads", href: "/community/discussion" }}
         secondary={{ label: "Read the rules", href: "/guidelines" }}
+        bgImage="/img/hero/hero-community.jpg"
       />
 
       <section className="section-y">
@@ -126,7 +122,7 @@ export default async function CommunityIndexPage() {
                 className="!max-w-xl"
               />
               <Link
-                href="/community/general"
+                href="/community/discussion"
                 className="text-xs uppercase tracking-cap text-gold hover:text-gold-hi"
               >
                 Open the forum

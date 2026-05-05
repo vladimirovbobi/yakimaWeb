@@ -1,7 +1,6 @@
 """Resolve social URLs to embeddable metadata. No 3rd-party JS — server-side only."""
 import re
 from dataclasses import dataclass
-from urllib.parse import parse_qs, urlparse
 
 YT_PATTERNS = [
     re.compile(r"(?:youtu\.be/|youtube\.com/(?:watch\?v=|shorts/|embed/))([\w-]{11})"),

@@ -138,6 +138,7 @@ export default async function HomePage() {
         subtitle="Slow takes, sharp questions, and the people who actually know this valley. A grounded local hub — verified, calm, and built to make you smarter about home."
         primary={{ label: "Read this week's stories", href: "/blog" }}
         secondary={{ label: "Join the conversation", href: "/community" }}
+        bgImage="/img/hero/hero-home.jpg"
       />
 
       <main id="main">

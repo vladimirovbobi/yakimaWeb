@@ -47,7 +47,8 @@ class PublicPostListView(generics.ListAPIView):
     def get_queryset(self):
         qs = (Post.objects
               .filter(status=PostStatus.PUBLISHED, moderation_status="approved")
-              .select_related("author", "author__realtor_profile"))
+              .select_related("author", "author__realtor_profile")
+              .prefetch_related("tags"))
         post_type = self.request.query_params.get("post_type") or self.request.query_params.get("type")
         if post_type in PostType.values:
             qs = qs.filter(post_type=post_type)
@@ -109,7 +110,8 @@ class PublicPostDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return (Post.objects
                 .filter(status=PostStatus.PUBLISHED, moderation_status="approved")
-                .select_related("author", "author__realtor_profile"))
+                .select_related("author", "author__realtor_profile")
+                .prefetch_related("tags"))
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

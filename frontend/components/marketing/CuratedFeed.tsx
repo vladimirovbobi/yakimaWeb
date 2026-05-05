@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardBody } from "@/components/ui/Card";
 import ScrollReveal from "@/components/reveal/ScrollReveal";
 import { formatDate } from "@/lib/utils";
+import { postPlaceholder } from "@/lib/placeholders";
 
 export interface FeedPost {
   id: number;
@@ -57,25 +58,23 @@ function readMinutes(excerpt: string | undefined, fallback?: number): number {
 }
 
 function FeaturedStory({ post }: { post: FeedPost }) {
+  const heroSrc =
+    post.hero_image || postPlaceholder(post.slug || post.id);
   return (
     <ScrollReveal>
       <Link href={`/blog/${post.slug}`} className="block group">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="relative aspect-[4/3] md:aspect-auto bg-warm overflow-hidden">
-              {post.hero_image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={post.hero_image}
-                  alt=""
-                  loading="eager"
-                  decoding="async"
-                  fetchPriority="high"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.03]"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-warm via-deep to-black" aria-hidden />
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={heroSrc}
+                alt=""
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.03]"
+              />
               <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/10 to-transparent" aria-hidden />
               <div className="absolute top-5 left-5 ey">Featured</div>
             </div>
@@ -102,23 +101,21 @@ function FeaturedStory({ post }: { post: FeedPost }) {
 }
 
 function StoryCard({ post, delay }: { post: FeedPost; delay: number }) {
+  const heroSrc =
+    post.hero_image || postPlaceholder(post.slug || post.id);
   return (
     <ScrollReveal delay={delay}>
       <Link href={`/blog/${post.slug}`} className="block group h-full">
         <Card className="h-full overflow-hidden">
           <div className="relative aspect-[16/9] bg-warm overflow-hidden">
-            {post.hero_image ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={post.hero_image}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.03]"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-warm via-deep to-black" aria-hidden />
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroSrc}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.03]"
+            />
           </div>
           <CardBody>
             <p className="label-luxe mb-3">

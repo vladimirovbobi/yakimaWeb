@@ -18,16 +18,28 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = True
+# CSRF cookie MUST stay JS-readable: the SPA double-submit pattern requires
+# JS to copy the cookie value into the X-CSRFToken header. httpOnly here
+# would silently break every mutating request from the Next.js frontend.
+CSRF_COOKIE_HTTPONLY = False
 X_FRAME_OPTIONS = "DENY"
 
-# CSP (basic — tighten in Phase 8)
+# CSP — the Next.js per-request nonce CSP (frontend/middleware.ts) is the
+# primary defense. Django responses (admin + email + RSS) inherit the
+# strict base.py policy: nonce-based script-src, no 'unsafe-inline' on
+# script. Style still allows 'unsafe-inline' because Django admin ships
+# inline styles; tightening that is a separate Sprint 9 follow-up.
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")  # tighten when Vite hashes wired
+CSP_SCRIPT_SRC = ("'self'", "'strict-dynamic'")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com")
-CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com", "data:")
 CSP_IMG_SRC = ("'self'", "data:", "https:")
 CSP_CONNECT_SRC = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)
+CSP_BASE_URI = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+CSP_OBJECT_SRC = ("'none'",)
+CSP_INCLUDE_NONCE_IN = ("script-src",)
 
 # ─── Email — Postmark required in prod ─────────────────────────────────
 if not env("POSTMARK_SERVER_TOKEN", default=""):
@@ -36,3 +48,10 @@ if not env("POSTMARK_SERVER_TOKEN", default=""):
         "Set it in Railway/Fly secrets."
     )
 EMAIL_BACKEND = "anymail.backends.postmark.EmailBackend"
+
+# ─── Webhook secrets must be present in prod ────────────────────────────
+if not env("DELIVERY_WEBHOOK_SECRET", default=""):
+    raise RuntimeError(
+        "DELIVERY_WEBHOOK_SECRET is required in production. "
+        "Set it in Railway/Fly secrets and mirror it into the delivery service."
+    )

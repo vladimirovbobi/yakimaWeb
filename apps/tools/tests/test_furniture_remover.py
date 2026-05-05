@@ -9,7 +9,6 @@ from __future__ import annotations
 import io
 import json
 from dataclasses import dataclass
-from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -17,12 +16,10 @@ from django.core.cache import cache
 from django.core.files.storage import default_storage
 
 from apps.moderation.services.image_input import (
-    ImageInputDecision,
     moderate_image_input,
 )
 from apps.tools.models import Tool, ToolUsage, UsageStatus
 from apps.tools.services import furniture_remover as svc
-from apps.tools.services.spend_cap import SpendCapExceeded
 from apps.tools.tasks import run_furniture_remover
 
 

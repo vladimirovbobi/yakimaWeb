@@ -128,7 +128,7 @@ export default async function DashboardHome() {
                       {t.title}
                     </Link>
                     <p className="text-[11px] uppercase tracking-luxe text-dim mt-1">
-                      {t.flair} - {t.reply_count} replies
+                      {t.flair?.label || t.flair?.slug || "Forum"} - {t.reply_count} replies
                     </p>
                   </li>
                 ))}

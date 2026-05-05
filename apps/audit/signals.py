@@ -38,7 +38,10 @@ def _request_meta() -> tuple[str, str]:
     req = get_current_request()
     if req is None:
         return ("", "")
-    ip = req.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or req.META.get("REMOTE_ADDR", "")
+    # Trust-aware client_ip — XFF only honored when REMOTE_ADDR is the trusted
+    # proxy. Otherwise an attacker could rewrite their own audit-log IP.
+    from apps.core.net import client_ip
+    ip = client_ip(req)
     ua = req.META.get("HTTP_USER_AGENT", "")[:400]
     return (ip, ua)
 

@@ -5,16 +5,11 @@ import logging
 from django.conf import settings
 from django.http import HttpResponseForbidden
 
+from apps.core.net import client_ip as _client_ip
+
 log = logging.getLogger(__name__)
 
 PROTECTED_PREFIXES = ("/admin/",)
-
-
-def _client_ip(request):
-    fwd = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "")
 
 
 def _ip_allowed(ip: str, allowlist: list[str]) -> bool:

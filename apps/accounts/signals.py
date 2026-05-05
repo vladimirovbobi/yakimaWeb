@@ -5,7 +5,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from .models import RealtorProfile, Role, User, VendorProfile, VerificationStatus
+from .models import RealtorProfile, Role, VendorProfile, VerificationStatus
 
 log = logging.getLogger(__name__)
 

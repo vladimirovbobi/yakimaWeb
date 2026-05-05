@@ -1,4 +1,5 @@
 """Delivery service settings — env-driven, mirrors the Django side where they overlap."""
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,10 +12,34 @@ class Settings(BaseSettings):
     service_name: str = "yakimaweb-delivery"
     environment: str = "dev"
 
-    # Auth — must match Django SECRET_KEY for JWT verification
-    django_secret_key: str = "change-me"
+    # Auth — must match Django SECRET_KEY for JWT verification.
+    # No defaults: a missing/sentinel secret in any non-dev environment is a
+    # production misconfiguration. The post-init check below blocks startup.
+    django_secret_key: str = ""
     jwt_algorithm: str = "HS256"
-    delivery_webhook_secret: str = "change-me-too"
+    delivery_webhook_secret: str = ""
+
+    def model_post_init(self, __context) -> None:  # noqa: D401
+        """Refuse to boot in prod with placeholder/empty secrets."""
+        env = (self.environment or "").lower()
+        is_prod = env not in {"dev", "development", "test"}
+        sentinels = {"", "change-me", "change-me-too", "changeme"}
+        if is_prod:
+            if self.django_secret_key in sentinels:
+                raise RuntimeError(
+                    "DJANGO_SECRET_KEY must be set to the real Django secret in prod."
+                )
+            if self.delivery_webhook_secret in sentinels:
+                raise RuntimeError(
+                    "DELIVERY_WEBHOOK_SECRET must be set to a strong random secret in prod."
+                )
+        # In dev we still want a usable value so the service can boot.
+        if self.django_secret_key in sentinels:
+            self.django_secret_key = os.environ.get("DJANGO_SECRET_KEY") or "dev-only-do-not-use"
+        if self.delivery_webhook_secret in sentinels:
+            self.delivery_webhook_secret = (
+                os.environ.get("DELIVERY_WEBHOOK_SECRET") or "dev-only-do-not-use"
+            )
 
     # Database — same Postgres as Django
     database_url: str = "postgresql+asyncpg://yakimaweb:yakimaweb@db:5432/yakimaweb"

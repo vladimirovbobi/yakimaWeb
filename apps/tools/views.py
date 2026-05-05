@@ -5,7 +5,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
-from .models import Tool, ToolUsage, UsageStatus
+from .models import Tool, ToolUsage
 from .services.rate_limit import check_and_consume, daily_spend_usd, usage_today
 from .tasks import run_description_writer
 

@@ -8,6 +8,7 @@ import SignInPrompt from "@/components/auth/SignInPrompt";
 import FeaturedServices from "@/components/marketing/FeaturedServices";
 import { safeServerFetch } from "@/lib/api/server";
 import { getCurrentUser } from "@/lib/auth/server";
+import { avatarPlaceholder } from "@/lib/placeholders";
 import type { ForumReply, ForumThread, Pagination } from "@/lib/api/types";
 import { formatDate, pluralize } from "@/lib/utils";
 import ReplyForm from "./ReplyForm";
@@ -55,12 +56,14 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
   if (!thread) notFound();
 
   const path = `/community/threads/${thread.slug}`;
+  const flairSlug = thread.flair?.slug || "discussion";
+  const flairLabel = thread.flair?.label || flairSlug;
 
   return (
     <section className="section-y">
       <Container>
         <Link
-          href={`/community/${thread.flair}`}
+          href={`/community/${flairSlug}`}
           className="inline-flex items-center gap-2 text-[11px] uppercase tracking-luxe text-mist hover:text-gold mb-8"
         >
           <svg
@@ -78,7 +81,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
               strokeLinejoin="round"
             />
           </svg>
-          Back to {thread.flair}
+          Back to {flairLabel}
         </Link>
 
         <article className="grid grid-cols-[60px_1fr] gap-6 max-w-4xl">
@@ -95,21 +98,24 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           <div>
             <div className="flex items-center gap-3 mb-3">
               <Link
-                href={`/community/${thread.flair}`}
+                href={`/community/${flairSlug}`}
                 className="text-[10px] uppercase tracking-luxe text-gold border border-gold/30 px-2 py-1 hover:bg-gold/10"
               >
-                {thread.flair}
+                {flairLabel}
               </Link>
               <span className="text-[11px] uppercase tracking-luxe text-mist flex items-center gap-2">
-                {thread.author.avatar_url ? (
-                  <Image
-                    src={thread.author.avatar_url}
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="rounded-full border border-gold/22"
-                  />
-                ) : null}
+                <Image
+                  src={
+                    thread.author.avatar_url ||
+                    avatarPlaceholder(
+                      thread.author.id || thread.author.display_name,
+                    )
+                  }
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="rounded-full border border-gold/22"
+                />
                 {thread.author.display_name}
                 {thread.author.is_realtor && thread.author.is_verified && (
                   <span

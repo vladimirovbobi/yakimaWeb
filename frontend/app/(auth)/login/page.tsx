@@ -7,10 +7,24 @@ import { apiFetch, ApiError } from "@/lib/api/fetch";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
+// Open-redirect defense: only honor `?next=` when it is a same-origin relative
+// path. Reject absolute URLs, protocol-relative URLs, and anything that doesn't
+// start with a single forward slash.
+function safeNext(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  // Must start with "/" but not "//" (protocol-relative) or "/\\" (Windows).
+  if (raw.length > 256) return "/dashboard";
+  if (!raw.startsWith("/")) return "/dashboard";
+  if (raw.startsWith("//") || raw.startsWith("/\\")) return "/dashboard";
+  // Reject anything that smuggles a scheme via control chars / colon.
+  if (/[\x00-\x1f]/.test(raw)) return "/dashboard";
+  return raw;
+}
+
 function LoginInner() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/dashboard";
+  const next = safeNext(sp.get("next"));
   const toast = useToast();
 
   const [email, setEmail] = useState("");

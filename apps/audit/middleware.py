@@ -58,11 +58,12 @@ class AccessLogMiddleware:
         if user is None or not user.is_authenticated:
             return  # log only authenticated staff route hits
         try:
+            from apps.core.net import client_ip
             AccessLog.objects.create(
                 actor=user, surface=surface,
                 path=request.path[:500], method=request.method,
                 status_code=getattr(response, "status_code", 0),
-                ip=request.META.get("REMOTE_ADDR"),
+                ip=client_ip(request) or None,
                 user_agent=request.META.get("HTTP_USER_AGENT", "")[:400],
             )
         except Exception:  # noqa: BLE001

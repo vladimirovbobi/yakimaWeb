@@ -81,6 +81,7 @@ export default function ToolsLandingPage() {
         title="Tools built for the realtor's day."
         subtitle="Four narrow tools, each one made to save you a real hour. Run them on your own listings. Output is yours."
         primary={{ label: "See how it works", href: "#how" }}
+        bgImage="/img/hero/hero-tools.jpg"
       />
 
       <section className="section-y">

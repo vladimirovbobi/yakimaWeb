@@ -1,7 +1,6 @@
 """Audit tests — staff writes get logged, anon writes don't."""
 import pytest
 
-from apps.accounts.models import RealtorProfile
 from apps.audit.models import ActionLog
 
 

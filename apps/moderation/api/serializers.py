@@ -18,7 +18,6 @@ from ..models import (
     Flag,
     FlagReason,
     FlagStatus,
-    ModerationAction,
     ModerationDecision,
 )
 

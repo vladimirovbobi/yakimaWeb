@@ -86,14 +86,10 @@ def _ip_subnet(ip: str) -> str:
     return ".".join(parts[:3]) + ".0/24"
 
 
-def _client_ip(request) -> str:
-    fwd = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "")
-
-
 def _fingerprint(request) -> str:
+    # Lazy import — avoids circular settings access at module load time and
+    # lets tests stub apps.core.net without bringing extra modules.
+    from apps.core.net import client_ip as _client_ip
     return (
         f"{_ua_class(request.META.get('HTTP_USER_AGENT', ''))}|"
         f"{_ip_subnet(_client_ip(request))}"

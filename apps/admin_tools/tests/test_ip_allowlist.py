@@ -1,6 +1,4 @@
 """IP allowlist middleware tests."""
-import pytest
-from django.test import override_settings
 
 from apps.admin_tools.middleware import _ip_allowed
 

@@ -58,6 +58,7 @@ services:
       NODE_ENV: development
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost}
       INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://api:8000}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost}
       NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-Yakima Real Estate Hub}
     depends_on:
       api:

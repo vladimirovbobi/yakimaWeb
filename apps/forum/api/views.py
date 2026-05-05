@@ -51,6 +51,34 @@ def _sort_threads(qs, sort: str):
     return qs.order_by("-pinned", "-created_at")
 
 
+class PublicAllThreadsListView(generics.ListAPIView):
+    """GET /api/public/v1/community/threads/ — cross-flair listing for the home + community index."""
+
+    serializer_class   = ForumThreadListSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class   = TimeCursorPagination
+
+    def get_queryset(self):
+        qs = (ForumThread.objects
+              .filter(moderation_status="approved")
+              .select_related("author", "author__realtor_profile", "flair"))
+        sort = (self.request.query_params.get("sort") or "new").lower()
+        return _sort_threads(qs, sort)
+
+    def list(self, request, *args, **kwargs):
+        result = self.get_queryset()
+        if isinstance(result, list):
+            try:
+                limit = int(request.query_params.get("limit", 20))
+            except ValueError:
+                limit = 20
+            limit = max(1, min(limit, 100))
+            sliced = result[:limit]
+            data = self.get_serializer(sliced, many=True).data
+            return Response({"next": None, "previous": None, "results": data})
+        return super().list(request, *args, **kwargs)
+
+
 class PublicFlairThreadListView(generics.ListAPIView):
     """GET /api/public/v1/community/<flair_slug>/threads/ — sort = new|top|hot."""
 
@@ -65,6 +93,21 @@ class PublicFlairThreadListView(generics.ListAPIView):
               .select_related("author", "author__realtor_profile", "flair"))
         sort = (self.request.query_params.get("sort") or "new").lower()
         return _sort_threads(qs, sort)
+
+    def list(self, request, *args, **kwargs):
+        # `hot` sort returns a Python list (hot_score is computed); CursorPagination
+        # expects a queryset, so honor `limit` manually and skip pagination for hot.
+        result = self.get_queryset()
+        if isinstance(result, list):
+            try:
+                limit = int(request.query_params.get("limit", 20))
+            except ValueError:
+                limit = 20
+            limit = max(1, min(limit, 100))
+            sliced = result[:limit]
+            data = self.get_serializer(sliced, many=True).data
+            return Response({"next": None, "previous": None, "results": data})
+        return super().list(request, *args, **kwargs)
 
 
 class PublicThreadDetailView(generics.RetrieveAPIView):

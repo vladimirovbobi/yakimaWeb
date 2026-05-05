@@ -166,7 +166,13 @@ export function lookupBffRoute(id: string): BffRoute | undefined {
   return ROUTE_BY_ID.get(id);
 }
 
-/** Substitutes :param placeholders from a path-params dict into the template. */
+/**
+ * Substitutes `:param` placeholders. We URL-encode every value AND reject any
+ * value that, after encoding, contains characters that could break out of the
+ * path segment ('/', '..', '?', '#', backslash). This prevents a client from
+ * smuggling `_path: { lead_id: "../../admin" }` into the template and steering
+ * the upstream fetch at an unintended Django route.
+ */
 export function buildTargetPath(
   template: string,
   pathParams: Record<string, string | number> = {},
@@ -176,6 +182,20 @@ export function buildTargetPath(
     if (v === undefined || v === null) {
       throw new Error(`Missing BFF path param: ${key}`);
     }
-    return String(v);
+    const raw = String(v);
+    // Block path-segment escapes outright. encodeURIComponent escapes '/' to
+    // %2F but Caddy/Django may decode that back; strip first so there's no
+    // ambiguity downstream.
+    if (
+      raw.includes("/") ||
+      raw.includes("\\") ||
+      raw.includes("..") ||
+      raw.includes("?") ||
+      raw.includes("#") ||
+      /[\x00-\x1f]/.test(raw)
+    ) {
+      throw new Error(`Invalid BFF path param: ${key}`);
+    }
+    return encodeURIComponent(raw);
   });
 }

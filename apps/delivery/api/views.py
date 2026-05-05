@@ -40,10 +40,16 @@ class FinalizeWebhookView(APIView):
         secret = getattr(settings, "DELIVERY_WEBHOOK_SECRET", "")
         signature = request.headers.get("X-Webhook-Signature", "")
         body = request.body or b""
-        expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-        # Allow trusted dev requests when no secret configured.
-        if secret and not hmac.compare_digest(expected, signature):
-            raise PermissionDenied("invalid_signature")
+        # Production must have a secret. An empty secret is only acceptable in
+        # DEBUG=True dev environments where the delivery service runs locally.
+        if not secret:
+            if not getattr(settings, "DEBUG", False):
+                log.error("delivery webhook called with empty DELIVERY_WEBHOOK_SECRET in non-debug mode")
+                raise PermissionDenied("webhook_misconfigured")
+        else:
+            expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(expected, signature):
+                raise PermissionDenied("invalid_signature")
 
         try:
             payload = json.loads(body or b"{}")

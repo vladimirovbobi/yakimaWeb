@@ -1,5 +1,4 @@
 """Tests for the notify() service + email digest + REST endpoints."""
-from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model

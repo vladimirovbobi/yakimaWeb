@@ -262,10 +262,15 @@ export default function QueueWorkstation({
           <h3 className="font-serif font-light text-ivory text-2xl mb-4">
             Item under review
           </h3>
-          <div
-            className="prose prose-invert max-w-none text-mist mb-8 whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: item.target_excerpt }}
-          />
+          {/*
+            target_excerpt is RAW user content (post body, comment, thread title etc.)
+            — it must NEVER be rendered as HTML. We render it as text so any embedded
+            HTML / scripts surface verbatim to the moderator (which is what they need
+            to see anyway when judging the content).
+          */}
+          <div className="max-w-none text-mist mb-8 whitespace-pre-wrap break-words">
+            {item.target_excerpt}
+          </div>
 
           {item.target_full_url && (
             <a

@@ -44,12 +44,14 @@ class ForumThreadListSerializer(serializers.ModelSerializer):
     author = PublicUserSerializer(read_only=True)
     flair  = FlairSerializer(read_only=True)
     last_activity_at = serializers.SerializerMethodField()
+    # Alias for frontend consumers expecting `vote_score`.
+    vote_score = serializers.IntegerField(source="score", read_only=True)
 
     class Meta:
         model  = ForumThread
         fields = (
             "id", "slug", "title", "author", "flair",
-            "score", "reply_count", "pinned", "locked",
+            "score", "vote_score", "reply_count", "pinned", "locked",
             "created_at", "last_activity_at",
         )
         read_only_fields = fields
@@ -66,15 +68,21 @@ class ForumThreadDetailSerializer(serializers.ModelSerializer):
     flair        = FlairSerializer(read_only=True)
     body_html    = serializers.SerializerMethodField()
     viewer_vote  = serializers.SerializerMethodField()
+    user_vote    = serializers.SerializerMethodField()
+    vote_score   = serializers.IntegerField(source="score", read_only=True)
 
     class Meta:
         model  = ForumThread
         fields = (
             "id", "slug", "title", "author", "flair",
-            "body", "body_html", "score", "reply_count",
-            "pinned", "locked", "viewer_vote", "created_at",
+            "body", "body_html", "score", "vote_score", "reply_count",
+            "pinned", "locked", "viewer_vote", "user_vote", "created_at",
         )
         read_only_fields = fields
+
+    def get_user_vote(self, obj: ForumThread) -> int:
+        request = self.context.get("request")
+        return _viewer_vote(getattr(request, "user", None), obj)
 
     def get_body_html(self, obj: ForumThread) -> str:
         return render_markdown(obj.body or "")
@@ -105,14 +113,20 @@ class ForumReplySerializer(serializers.ModelSerializer):
     parent      = serializers.PrimaryKeyRelatedField(read_only=True)
     body_html   = serializers.SerializerMethodField()
     viewer_vote = serializers.SerializerMethodField()
+    user_vote   = serializers.SerializerMethodField()
+    vote_score  = serializers.IntegerField(source="score", read_only=True)
 
     class Meta:
         model  = ForumReply
         fields = (
             "id", "body", "body_html", "author", "parent",
-            "score", "viewer_vote", "created_at",
+            "score", "vote_score", "viewer_vote", "user_vote", "created_at",
         )
         read_only_fields = fields
+
+    def get_user_vote(self, obj: ForumReply) -> int:
+        request = self.context.get("request")
+        return _viewer_vote(getattr(request, "user", None), obj)
 
     def get_body_html(self, obj: ForumReply) -> str:
         return render_markdown(obj.body or "")

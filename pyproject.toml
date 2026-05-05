@@ -8,12 +8,9 @@ dependencies = [
     "django-environ>=0.11",
     "django-allauth>=65.0",
     "django-otp>=1.5",
-    "qrcode>=7.4",
     "django-axes>=7.0",
     "django-htmx>=1.19",
-    "django-extensions>=3.2",
     "django-treebeard>=4.7",
-    "django-dirtyfields>=1.9",
     "psycopg[binary]>=3.2",
     "redis>=5.0",
     "celery[redis]>=5.4",
@@ -38,7 +35,6 @@ dependencies = [
     "drf-spectacular>=0.27",
     "django-csp>=3.8",
     "django-filter>=24.3",
-    "strawberry-graphql-django>=0.51",
     # Flyer-generator: HTML → PDF rendering on the img-worker container only.
     # Chromium itself is installed via `playwright install chromium` in the
     # img-worker Dockerfile (commit 6); the dev environment can skip the

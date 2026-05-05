@@ -31,10 +31,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import (
     Brokerage,
-    LicenseType,
-    RealtorProfile,
     VendorProfile,
-    VerificationStatus,
 )
 from apps.audit.models import AccessLog, Surface
 from apps.content.services.sanitize import sanitize_html

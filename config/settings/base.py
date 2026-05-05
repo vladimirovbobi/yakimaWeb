@@ -42,7 +42,6 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    "django_extensions",
     "django_htmx",
     "django_celery_beat",
     "django_celery_results",

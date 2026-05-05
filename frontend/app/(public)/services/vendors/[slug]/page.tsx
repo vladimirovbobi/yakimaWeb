@@ -10,6 +10,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { safeServerFetch } from "@/lib/api/server";
 import { getCurrentUser } from "@/lib/auth/server";
+import { vendorLogoPlaceholder } from "@/lib/placeholders";
 import type { Pagination, Review, Service, VendorProfile } from "@/lib/api/types";
 import { formatDate, pluralize } from "@/lib/utils";
 
@@ -22,7 +23,7 @@ export async function generateMetadata({
 }: VendorPageProps): Promise<Metadata> {
   const { slug } = await params;
   const vendor = await safeServerFetch<VendorProfile>(
-    `/api/public/v1/services/vendors/${slug}/`,
+    `/api/public/v1/vendors/${slug}/`,
     {},
     { cache: "no-store" },
   );
@@ -37,7 +38,7 @@ export default async function VendorProfilePage({ params }: VendorPageProps) {
   const { slug } = await params;
   const [vendor, services, reviews, user] = await Promise.all([
     safeServerFetch<VendorProfile>(
-      `/api/public/v1/services/vendors/${slug}/`,
+      `/api/public/v1/vendors/${slug}/`,
       {},
       { cache: "no-store" },
     ),
@@ -47,7 +48,7 @@ export default async function VendorProfilePage({ params }: VendorPageProps) {
       { cache: "no-store" },
     ),
     safeServerFetch<Pagination<Review>>(
-      `/api/public/v1/services/vendors/${slug}/reviews/?limit=10`,
+      `/api/public/v1/vendors/${slug}/reviews/?limit=10`,
       {},
       { cache: "no-store" },
     ),
@@ -74,22 +75,16 @@ export default async function VendorProfilePage({ params }: VendorPageProps) {
         )}
         <Container>
           <div className="relative py-16 flex flex-col md:flex-row gap-8 items-start">
-            {vendor.logo_url ? (
-              <Image
-                src={vendor.logo_url}
-                alt=""
-                width={120}
-                height={120}
-                className="rounded-full border border-gold/30 flex-shrink-0"
-              />
-            ) : (
-              <div
-                aria-hidden
-                className="w-[120px] h-[120px] rounded-full bg-warm border border-gold/30 flex items-center justify-center text-gold font-serif text-4xl flex-shrink-0"
-              >
-                {vendor.business_name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <Image
+              src={
+                vendor.logo_url ||
+                vendorLogoPlaceholder(vendor.slug || vendor.id)
+              }
+              alt=""
+              width={120}
+              height={120}
+              className="rounded-full border border-gold/30 flex-shrink-0"
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-[11px] uppercase tracking-luxe text-gold">

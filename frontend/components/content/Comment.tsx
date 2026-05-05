@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { Comment as CommentType } from "@/lib/api/types";
 import { formatDate } from "@/lib/utils";
+import { avatarPlaceholder } from "@/lib/placeholders";
 import CommentForm from "./CommentForm";
 import CommentThread from "./CommentThread";
 
@@ -38,22 +39,18 @@ export default function Comment({
     <div style={{ marginLeft: indent * 20 }}>
       <div className="border-l border-gold/14 pl-4 py-3">
         <div className="flex items-center gap-3 mb-2">
-          {comment.author.avatar_url ? (
-            <Image
-              src={comment.author.avatar_url}
-              alt=""
-              width={24}
-              height={24}
-              className="rounded-full border border-gold/22"
-            />
-          ) : (
-            <div
-              aria-hidden
-              className="w-6 h-6 rounded-full bg-warm border border-gold/22 flex items-center justify-center text-[10px] text-gold"
-            >
-              {comment.author.display_name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          <Image
+            src={
+              comment.author.avatar_url ||
+              avatarPlaceholder(
+                comment.author.id || comment.author.display_name,
+              )
+            }
+            alt=""
+            width={24}
+            height={24}
+            className="rounded-full border border-gold/22"
+          />
           <span className="text-sm text-ivory">
             {comment.author.display_name}
           </span>

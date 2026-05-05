@@ -2,7 +2,13 @@ import "server-only";
 import { cookies } from "next/headers";
 import { ApiError, type ProblemDetail } from "./fetch";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// Server-side fetches must hit the api container directly via the docker network.
+// INTERNAL_API_BASE_URL is set in docker-compose. Falls through to NEXT_PUBLIC if
+// running the frontend dev server pointed at a non-Docker backend.
+const BASE =
+  process.env.INTERNAL_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:8000";
 
 export interface ServerFetchOpts {
   auth?: boolean;

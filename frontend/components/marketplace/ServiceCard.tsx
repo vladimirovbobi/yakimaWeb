@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { Service } from "@/lib/api/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { pluralize } from "@/lib/utils";
+import { servicePlaceholder } from "@/lib/placeholders";
 
 interface ServiceCardProps {
   service: Service;
@@ -41,6 +42,8 @@ function Stars({ value, count }: { value: number | null; count: number }) {
 }
 
 export default function ServiceCard({ service, priority }: ServiceCardProps) {
+  const heroSrc =
+    service.hero_image_url || servicePlaceholder(service.slug || service.id);
   return (
     <Link
       href={`/services/${service.slug}`}
@@ -48,20 +51,14 @@ export default function ServiceCard({ service, priority }: ServiceCardProps) {
     >
       <Card className="h-full overflow-hidden">
         <div className="relative aspect-[4/3] overflow-hidden bg-warm">
-          {service.hero_image_url ? (
-            <Image
-              src={service.hero_image_url}
-              alt={service.title}
-              fill
-              priority={priority}
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 420px"
-              className="object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.04]"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-dim text-xs uppercase tracking-luxe">
-              No image
-            </div>
-          )}
+          <Image
+            src={heroSrc}
+            alt={service.title}
+            fill
+            priority={priority}
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 420px"
+            className="object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.04]"
+          />
         </div>
         <CardBody className="flex flex-col">
           <div className="flex items-center justify-between gap-3 mb-3">

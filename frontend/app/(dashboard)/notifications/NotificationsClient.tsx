@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api/fetch";
 import { cn } from "@/lib/utils";
+import EmptyState from "@/components/layout/EmptyState";
 import type { NotificationDto } from "./page";
 
 interface Props {
@@ -121,7 +122,11 @@ export default function NotificationsClient({
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-mist">No notifications match this filter.</p>
+        <EmptyState
+          kind="notifications"
+          title="You're all caught up"
+          body="No notifications match this filter. New activity will land here as it happens."
+        />
       ) : (
         <ul className="divide-y divide-gold/14 border border-gold/14 rounded-md">
           {rows.map((n) => (

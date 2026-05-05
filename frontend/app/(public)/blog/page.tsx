@@ -55,6 +55,7 @@ export default async function BlogIndexPage({ searchParams }: BlogPageProps) {
         eyebrow="The blog"
         title="Stories, market truth, and the real Yakima Valley."
         subtitle="Yakima Web posts, plus blogs from verified local realtors. New writing every week."
+        bgImage="/img/hero/hero-blog.jpg"
       />
 
       {featured && featured.results.length > 0 && (

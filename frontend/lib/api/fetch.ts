@@ -18,10 +18,23 @@ export class ApiError extends Error {
   }
 }
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// Empty default → relative URLs (same-origin via Caddy). Browsers can't reach
+// the api container directly; only the edge proxy is published. NEXT_PUBLIC_API_BASE_URL
+// only matters when running the frontend dev server pointed at a non-edge backend.
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 export interface ApiFetchOpts {
   auth?: boolean;
+}
+
+const UNSAFE = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const m = document.cookie.match(
+    new RegExp("(?:^|;\\s*)" + name + "=([^;]+)"),
+  );
+  return m ? decodeURIComponent(m[1]) : null;
 }
 
 async function attempt(path: string, init: RequestInit) {
@@ -32,6 +45,14 @@ async function attempt(path: string, init: RequestInit) {
     headers.set("X-Requested-With", "XMLHttpRequest");
   if (init.body && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json");
+
+  // CSRF double-submit: mirror the yw_csrf cookie into X-CSRFToken on every
+  // unsafe method. StrictCSRFMixin on the Django side validates the match.
+  const method = (init.method || "GET").toUpperCase();
+  if (UNSAFE.has(method) && !headers.has("X-CSRFToken")) {
+    const csrf = readCookie("yw_csrf") || readCookie("csrftoken");
+    if (csrf) headers.set("X-CSRFToken", csrf);
+  }
 
   return fetch(url, {
     ...init,

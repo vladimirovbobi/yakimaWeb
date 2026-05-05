@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { VendorProfile } from "@/lib/api/types";
+import { vendorLogoPlaceholder } from "@/lib/placeholders";
 
 interface VendorChipProps {
   vendor: VendorProfile;
@@ -9,29 +10,21 @@ interface VendorChipProps {
 
 export default function VendorChip({ vendor, size = "md" }: VendorChipProps) {
   const dim = size === "sm" ? 24 : 32;
+  const logoSrc =
+    vendor.logo_url || vendorLogoPlaceholder(vendor.slug || vendor.id);
   return (
     <Link
       href={`/services/vendors/${vendor.slug}`}
       data-touch
       className="inline-flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded py-1"
     >
-      {vendor.logo_url ? (
-        <Image
-          src={vendor.logo_url}
-          alt=""
-          width={dim}
-          height={dim}
-          className="rounded-full border border-gold/22"
-        />
-      ) : (
-        <div
-          aria-hidden
-          className="rounded-full bg-warm border border-gold/22 flex items-center justify-center text-gold"
-          style={{ width: dim, height: dim, fontSize: size === "sm" ? 10 : 12 }}
-        >
-          {vendor.business_name.charAt(0).toUpperCase()}
-        </div>
-      )}
+      <Image
+        src={logoSrc}
+        alt=""
+        width={dim}
+        height={dim}
+        className="rounded-full border border-gold/22"
+      />
       <span
         className={
           size === "sm"

@@ -1,5 +1,9 @@
 """Seed demo content. Idempotent. Content created with moderation_status=approved."""
+from pathlib import Path
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.text import slugify
@@ -12,6 +16,23 @@ from apps.forum.models import Flair, ForumThread
 
 
 User = get_user_model()
+
+
+# Placeholder JPGs ship with the frontend; we copy them into Django storage
+# so the API returns a valid hero_image URL on every seeded post.
+PLACEHOLDER_DIR = Path(settings.BASE_DIR) / "frontend" / "public" / "img" / "posts"
+
+
+def _attach_placeholder(post: Post, idx: int) -> None:
+    """Deterministically assign post-{N}.jpg to a Post instance."""
+    if post.hero_image:
+        return
+    n = (idx % 10) + 1
+    src = PLACEHOLDER_DIR / f"post-{n}.jpg"
+    if not src.exists():
+        return
+    with src.open("rb") as fh:
+        post.hero_image.save(src.name, File(fh), save=True)
 
 DEMO_REALTOR_EMAIL = "demo-realtor@yakimaweb.local"
 
@@ -307,9 +328,9 @@ class Command(BaseCommand):
         now = timezone.now()
 
         org_created = 0
-        for spec in ORG_POSTS:
+        for idx, spec in enumerate(ORG_POSTS):
             slug = slugify(spec["title"])[:240]
-            _, was_created = Post.objects.get_or_create(
+            post, was_created = Post.objects.get_or_create(
                 slug=slug,
                 defaults={
                     "author": org_author,
@@ -325,11 +346,12 @@ class Command(BaseCommand):
             )
             if was_created:
                 org_created += 1
+            _attach_placeholder(post, idx)
 
         blog_created = 0
-        for spec in REALTOR_BLOG_TOPICS:
+        for idx, spec in enumerate(REALTOR_BLOG_TOPICS):
             slug = slugify(spec["title"])[:240]
-            _, was_created = Post.objects.get_or_create(
+            post, was_created = Post.objects.get_or_create(
                 slug=slug,
                 defaults={
                     "author": demo_realtor,
@@ -345,6 +367,8 @@ class Command(BaseCommand):
             )
             if was_created:
                 blog_created += 1
+            # Offset realtor posts by 5 so they don't share visuals with org posts.
+            _attach_placeholder(post, idx + 5)
 
         thread_created = 0
         for flair_slug, title, body in FORUM_THREADS:

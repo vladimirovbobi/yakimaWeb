@@ -12,7 +12,6 @@ from ..models import (
     LicenseType,
     RealtorProfile,
     VendorProfile,
-    VerificationStatus,
 )
 
 User = get_user_model()
@@ -27,10 +26,11 @@ class PublicUserSerializer(serializers.ModelSerializer):
     """Anyone-readable view of a user. No PII beyond display."""
 
     avatar = serializers.ImageField(use_url=True, read_only=True)
+    display_name = serializers.CharField(source="full_name", read_only=True)
 
     class Meta:
         model = User
-        fields = ("id", "full_name", "avatar", "role")
+        fields = ("id", "full_name", "display_name", "avatar", "role")
         read_only_fields = fields
 
 
@@ -38,17 +38,28 @@ class PrivateUserSerializer(serializers.ModelSerializer):
     """The signed-in user's own view. Includes email + flags."""
 
     avatar = serializers.ImageField(use_url=True, read_only=True)
+    display_name = serializers.CharField(source="full_name", read_only=True)
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = (
-            "id", "email", "full_name", "avatar", "role",
-            "is_realtor", "is_vendor", "last_seen", "created_at",
-        )
-        read_only_fields = (
-            "id", "email", "role", "is_realtor", "is_vendor",
+            "id", "email", "full_name", "display_name", "avatar", "avatar_url",
+            "role", "is_realtor", "is_vendor", "is_staff", "is_superuser",
             "last_seen", "created_at",
         )
+        read_only_fields = (
+            "id", "email", "display_name", "role",
+            "is_realtor", "is_vendor", "is_staff", "is_superuser",
+            "last_seen", "created_at",
+        )
+
+    def get_avatar_url(self, obj) -> str | None:
+        if not obj.avatar:
+            return None
+        request = self.context.get("request")
+        url = obj.avatar.url
+        return request.build_absolute_uri(url) if request else url
 
 
 class MeUpdateSerializer(serializers.ModelSerializer):
@@ -170,10 +181,10 @@ class SignupSerializer(serializers.Serializer):
     password_confirm = serializers.CharField(write_only=True, min_length=12, max_length=128)
 
     def validate_email(self, value: str) -> str:
-        normalised = value.strip().lower()
-        if User.objects.filter(email__iexact=normalised).exists():
-            raise serializers.ValidationError("An account with that email already exists.")
-        return normalised
+        # Deliberately do NOT check uniqueness here — that would leak which
+        # emails are registered. The view catches IntegrityError and returns
+        # the same 201/202 shape it would for a fresh signup.
+        return value.strip().lower()
 
     def validate(self, attrs: dict) -> dict:
         if attrs["password"] != attrs["password_confirm"]:

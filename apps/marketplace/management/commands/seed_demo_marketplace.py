@@ -1,7 +1,10 @@
 """Seed demo marketplace data. Idempotent. Categories must already be seeded."""
 from decimal import Decimal
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.text import slugify
@@ -13,6 +16,21 @@ from apps.marketplace.models import (BillingCadence, Bundle, BundleItem,
 
 
 User = get_user_model()
+
+
+PLACEHOLDER_DIR = Path(settings.BASE_DIR) / "frontend" / "public" / "img" / "services"
+
+
+def _attach_service_placeholder(service: Service, idx: int) -> None:
+    """Deterministically assign service-{N}.jpg to a Service instance."""
+    if service.hero_image:
+        return
+    n = (idx % 12) + 1
+    src = PLACEHOLDER_DIR / f"service-{n}.jpg"
+    if not src.exists():
+        return
+    with src.open("rb") as fh:
+        service.hero_image.save(src.name, File(fh), save=True)
 
 
 VENDORS = [
@@ -147,7 +165,7 @@ class Command(BaseCommand):
 
         services_by_email: dict[str, Service] = {}
 
-        for spec in VENDORS:
+        for idx, spec in enumerate(VENDORS):
             user = _ensure_user(spec["email"], spec["business"])
             vendor = _ensure_vendor(user, spec["business"], spec["tagline"])
             category = Category.objects.filter(slug=spec["category"]).first()
@@ -166,6 +184,7 @@ class Command(BaseCommand):
             )
             if was_created:
                 services_created += 1
+            _attach_service_placeholder(service, idx)
             services_by_email[spec["email"]] = service
 
             for tier, name, desc, price in spec["packages"]:

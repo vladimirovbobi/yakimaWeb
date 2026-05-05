@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 
 from apps.audit.models import AccessLog, ActionLog, Surface
 from apps.audit.services import anomaly_detector

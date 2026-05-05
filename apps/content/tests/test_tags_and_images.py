@@ -1,7 +1,6 @@
 """Sprint 5 content polish tests — Tag M2M + comment image moderation hook."""
 from __future__ import annotations
 
-from io import BytesIO
 from unittest.mock import patch
 
 import pytest
@@ -11,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from apps.content.models import Comment, Post, PostStatus, PostType, Tag
+from apps.content.models import Comment, Post, PostStatus, Tag
 from apps.content.services.sanitize import render_post_body, sanitize_html
 
 User = get_user_model()

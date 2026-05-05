@@ -69,3 +69,4 @@ Thumbs.db
 secrets/
 dev.sqlite3
 .claude/
+.login.json

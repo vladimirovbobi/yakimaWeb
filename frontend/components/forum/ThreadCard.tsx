@@ -1,17 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ForumThread } from "@/lib/api/types";
 import { formatDate, pluralize } from "@/lib/utils";
-
-const FLAIR_LABEL: Record<string, string> = {
-  buying: "Buying",
-  selling: "Selling",
-  market: "Market",
-  renting: "Renting",
-  ask: "Ask Yakima",
-  vendors: "Vendors",
-  neighborhood: "Neighborhoods",
-  general: "General",
-};
+import { threadPlaceholder } from "@/lib/placeholders";
 
 interface ThreadCardProps {
   thread: ForumThread;
@@ -22,7 +13,8 @@ export default function ThreadCard({
   thread,
   showFlair = true,
 }: ThreadCardProps) {
-  const flairLabel = FLAIR_LABEL[thread.flair] || thread.flair;
+  const flairLabel = thread.flair?.label || thread.flair?.slug || "Forum";
+  const thumbSrc = threadPlaceholder(thread.slug || thread.id);
   return (
     <Link
       href={`/community/threads/${thread.slug}`}
@@ -52,6 +44,15 @@ export default function ThreadCard({
           <span className="text-[10px] uppercase tracking-luxe text-dim">
             votes
           </span>
+        </div>
+        <div className="hidden md:block flex-shrink-0 relative w-[240px] aspect-[16/9] overflow-hidden bg-warm border border-gold/14">
+          <Image
+            src={thumbSrc}
+            alt=""
+            fill
+            sizes="240px"
+            className="object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.03]"
+          />
         </div>
         <div className="flex sm:hidden items-center gap-2 text-[11px] uppercase tracking-luxe text-dim">
           <svg

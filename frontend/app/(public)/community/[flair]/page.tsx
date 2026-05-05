@@ -10,36 +10,32 @@ import type { ForumThread, Pagination } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
 const FLAIR_INFO: Record<string, { name: string; description: string }> = {
-  buying: {
-    name: "Buying",
-    description: "First-time buyers, comps, what to look out for.",
-  },
-  selling: {
-    name: "Selling",
-    description: "Pricing, prep, when to sit and when to move.",
-  },
-  market: {
-    name: "Market",
-    description: "Yakima Valley data, trends, real numbers.",
-  },
-  renting: {
-    name: "Renting",
-    description: "Tenants, landlords, leases, the gray areas.",
-  },
-  ask: {
-    name: "Ask Yakima",
+  question: {
+    name: "Question",
     description: "Open questions to anyone with local knowledge.",
   },
-  vendors: {
-    name: "Vendors",
-    description: "Recommendations, reviews, who's actually any good.",
+  discussion: {
+    name: "Discussion",
+    description: "Slow takes, sharp questions, neighborly debate.",
   },
-  neighborhood: {
-    name: "Neighborhoods",
-    description: "Selah vs Terrace Heights, schools, commute, vibe.",
+  help: {
+    name: "Help Needed",
+    description: "Buyers, sellers, renters — ask the room.",
   },
-  general: {
-    name: "General",
+  "local-news": {
+    name: "Local News",
+    description: "What's actually happening in the Yakima Valley.",
+  },
+  market: {
+    name: "Market Talk",
+    description: "Central Washington data, trends, real numbers.",
+  },
+  "show-tell": {
+    name: "Show & Tell",
+    description: "Renovations, listings, projects worth a look.",
+  },
+  "off-topic": {
+    name: "Off-Topic",
     description: "Local takes that don't fit anywhere else.",
   },
 };
@@ -81,14 +77,13 @@ export default async function FlairPage({
   const sort: Sort = (sp.sort as Sort) || "hot";
 
   const qs = new URLSearchParams();
-  qs.set("flair", flair);
   qs.set("sort", sort);
   qs.set("limit", "20");
   if (sp.cursor) qs.set("cursor", sp.cursor);
 
   const [threads, user] = await Promise.all([
     safeServerFetch<Pagination<ForumThread>>(
-      `/api/public/v1/community/threads/?${qs.toString()}`,
+      `/api/public/v1/community/${flair}/threads/?${qs.toString()}`,
       {},
       { cache: "no-store" },
     ),
