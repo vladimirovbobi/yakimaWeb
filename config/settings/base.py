@@ -250,6 +250,11 @@ GEMINI_MODERATION_MODEL = env("GEMINI_MODERATION_MODEL", default="gemini-2.5-fla
 GEMINI_TOOLS_MODEL = env("GEMINI_TOOLS_MODEL", default="gemini-2.5-pro")
 GEMINI_DAILY_SPEND_CAP_USD = env("GEMINI_DAILY_SPEND_CAP_USD")
 
+# Flyer-generator backend selector. Prototype path uses the local Claude Code
+# subscription via subprocess; commercializing flips this to "gemini" or
+# "anthropic_api" with no other code changes. See apps/tools/services/flyer_generator/.
+FLYER_BACKEND = env("FLYER_BACKEND", default="claude_cli")
+
 # ─── License verification (ARELLO) ───────────────────────────────────────
 ARELLO_BASE_URL = env("ARELLO_BASE_URL", default="https://lvws-sandbox.arello.com")
 ARELLO_API_KEY = env("ARELLO_API_KEY", default="")
