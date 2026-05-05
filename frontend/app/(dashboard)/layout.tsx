@@ -3,6 +3,10 @@ import { getCurrentUser } from "@/lib/auth/server";
 import DashboardSidebar from "./DashboardSidebar";
 import DashboardHeader from "./DashboardHeader";
 
+// Every authed page needs request-time data (cookies, /me/, etc.).
+// Skip static collection at build — pages always render server-side per-request.
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {

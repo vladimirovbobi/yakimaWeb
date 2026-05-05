@@ -22,7 +22,10 @@
     auto_https off  # dev. Production overlay flips via env / Caddy auto-detect.
 }
 
-{$DOMAIN:localhost} {
+# Explicit `http://` scheme + :80 listener. With `auto_https off`, Caddy's
+# `localhost` site otherwise gets internal HTTPS on :443 only — leaving :80
+# unbound. Forcing scheme + port keeps the dev story simple (curl http://localhost).
+http://{$DOMAIN:localhost}:80 {
     encode gzip zstd
 
     # Block external access to the Caddy admin endpoint accidentally exposed

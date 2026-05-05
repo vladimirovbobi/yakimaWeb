@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/server";
 import { safeServerFetch } from "@/lib/api/server";
 import StepClient from "./StepClient";
-import { STEPS } from "@/components/vendor/wizard/WizardChrome";
+import { STEPS } from "@/components/vendor/wizard/steps";
 
 interface MyVendorResponse {
   business_name?: string;

@@ -4,16 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { AutosaveState } from "./useAutosave";
+import { STEPS, type StepKey } from "./steps";
 
-export const STEPS = [
-  { key: "business",   label: "Business" },
-  { key: "categories", label: "Categories" },
-  { key: "services",   label: "Services" },
-  { key: "gallery",    label: "Gallery" },
-  { key: "publish",    label: "Publish" },
-] as const;
-
-export type StepKey = (typeof STEPS)[number]["key"];
+// Re-export so existing import sites (`@/components/vendor/wizard/WizardChrome`)
+// still resolve. New code should import from "./steps" directly.
+export { STEPS };
+export type { StepKey };
 
 interface Props {
   currentStep: StepKey;
