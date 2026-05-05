@@ -43,6 +43,16 @@ const TOOLS = [
     cta: "Try image compressor",
     href: "/dashboard/tools/image-compressor",
   },
+  {
+    eyebrow: "Listing collateral",
+    name: "Flyer generator",
+    summary:
+      "Pick a style, drop in property details, get a print-ready PDF in about a minute.",
+    detail:
+      "Six curated design presets — editorial, minimal, bold, geometric, Swiss, Italian. Add your palette overrides, the property facts, and your callouts. We compose the HTML and render a US Letter PDF you can print or hand to clients.",
+    cta: "Try flyer generator",
+    href: "/dashboard/tools/flyer-generator",
+  },
 ];
 
 const STEPS = [
@@ -69,7 +79,7 @@ export default function ToolsLandingPage() {
       <Hero
         eyebrow="AI tools"
         title="Tools built for the realtor's day."
-        subtitle="Two tools, both narrow, both useful. Run them on your own listings. Output is yours."
+        subtitle="Four narrow tools, each one made to save you a real hour. Run them on your own listings. Output is yours."
         primary={{ label: "See how it works", href: "#how" }}
       />
 
@@ -78,7 +88,7 @@ export default function ToolsLandingPage() {
           <ScrollReveal>
             <SectionHeader
               eyebrow="What's available"
-              title="Two tools. Both made to actually save time."
+              title="Four tools. Each made to actually save time."
             />
           </ScrollReveal>
 
