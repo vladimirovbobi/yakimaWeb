@@ -39,6 +39,11 @@ dependencies = [
     "django-csp>=3.8",
     "django-filter>=24.3",
     "strawberry-graphql-django>=0.51",
+    # Flyer-generator: HTML → PDF rendering on the img-worker container only.
+    # Chromium itself is installed via `playwright install chromium` in the
+    # img-worker Dockerfile (commit 6); the dev environment can skip the
+    # browser install since flyer_pdf.render is monkeypatched in unit tests.
+    "playwright>=1.50",
 ]
 
 [build-system]
@@ -54,7 +59,10 @@ packages = [
     "apps.audit", "apps.audit.api", "apps.audit.tests",
     "apps.admin_tools", "apps.admin_tools.tests",
     "apps.content", "apps.content.api", "apps.content.services", "apps.content.tests",
-    "apps.tools", "apps.tools.api", "apps.tools.services", "apps.tools.tests",
+    "apps.tools", "apps.tools.api", "apps.tools.services",
+    "apps.tools.services.flyer_generator",
+    "apps.tools.services.flyer_generator.backends",
+    "apps.tools.tests",
     "apps.forum", "apps.forum.api", "apps.forum.services", "apps.forum.tests",
     "apps.marketplace", "apps.marketplace.api", "apps.marketplace.services", "apps.marketplace.tests",
     "apps.operations", "apps.operations.api", "apps.operations.services", "apps.operations.tests",

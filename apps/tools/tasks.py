@@ -1,4 +1,5 @@
 """Celery tasks: every AI call goes through here. Never sync from views."""
+
 import logging
 import time
 import uuid
@@ -11,6 +12,8 @@ from apps.moderation.services.pipeline import moderate
 
 from .models import ToolUsage, UsageStatus
 from .services.description_writer import generate as gen_description
+from .services.flyer_pdf import FlyerPDFError
+from .services.flyer_pdf import render as render_flyer
 from .services.furniture_remover import (
     FurnitureRemoverError,
 )
@@ -142,7 +145,7 @@ def run_furniture_remover(self, usage_id: int) -> dict:
     except FurnitureRemoverError as exc:
         log.warning("furniture remover transient error: %s", exc)
         try:
-            countdown = 30 * (2 ** self.request.retries)
+            countdown = 30 * (2**self.request.retries)
             raise self.retry(exc=exc, countdown=countdown)
         except self.MaxRetriesExceededError:
             usage.status = UsageStatus.FAILED
@@ -216,7 +219,7 @@ def run_image_compressor(self, usage_id: int) -> dict:
     except ImageCompressorError as exc:
         log.warning("image_compressor: transient error: %s", exc)
         try:
-            countdown = 15 * (2 ** self.request.retries)
+            countdown = 15 * (2**self.request.retries)
             raise self.retry(exc=exc, countdown=countdown)
         except self.MaxRetriesExceededError:
             usage.status = UsageStatus.FAILED
@@ -232,8 +235,7 @@ def run_image_compressor(self, usage_id: int) -> dict:
 
     output_suffix = uuid.uuid4().hex[:8]
     output_path = (
-        f"tools/image-compressor/{usage.user_id}/results/"
-        f"{output_suffix}-{result.output_filename}"
+        f"tools/image-compressor/{usage.user_id}/results/{output_suffix}-{result.output_filename}"
     )
     try:
         default_storage.save(output_path, ContentFile(result.output_bytes))
@@ -257,28 +259,106 @@ def run_image_compressor(self, usage_id: int) -> dict:
     usage.cost_usd = 0
     usage.duration_ms = int((time.time() - t0) * 1000)
     usage.output_meta = {
-        "filename":      result.output_filename,
-        "format":        result.output_format,
-        "input_size":    result.input_size,
-        "output_size":   result.output_size,
-        "bytes_saved":   result.bytes_saved,
+        "filename": result.output_filename,
+        "format": result.output_format,
+        "input_size": result.input_size,
+        "output_size": result.output_size,
+        "bytes_saved": result.bytes_saved,
         "percent_saved": result.percent_saved,
-        "width":         result.width,
-        "height":        result.height,
-        "method":        result.method,
-        "url":           output_url,
-        "output_path":   output_path,
-        "input_url":     input_url,
+        "width": result.width,
+        "height": result.height,
+        "method": result.method,
+        "url": output_url,
+        "output_path": output_path,
+        "input_url": input_url,
     }
     usage.save()
 
     return {
-        "status":        "success",
-        "input_url":     input_url,
-        "output_url":    output_url,
-        "input_size":    result.input_size,
-        "output_size":   result.output_size,
+        "status": "success",
+        "input_url": input_url,
+        "output_url": output_url,
+        "input_size": result.input_size,
+        "output_size": result.output_size,
         "percent_saved": result.percent_saved,
-        "format":        result.output_format,
-        "runtime_ms":    usage.duration_ms,
+        "format": result.output_format,
+        "runtime_ms": usage.duration_ms,
+    }
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Flyer generator — PDF render stage (Sprint 2)
+# ──────────────────────────────────────────────────────────────────────────
+@shared_task(bind=True, max_retries=2, queue="images")
+def render_flyer_pdf(self, usage_id: int) -> dict:
+    """Render the HTML on a ToolUsage row into a PDF and persist it.
+
+    Reads ``output_meta["html"]`` (set by ``run_flyer_generator`` in commit 4),
+    runs Playwright Chromium on the dedicated img-worker, saves the bytes to
+    default_storage at ``flyers/{user_id}/{usage_id}.pdf``, and stamps
+    ``output_meta["pdf_url"]`` + ``status=SUCCESS``.
+
+    Retries with an exponential countdown on transient Playwright failures.
+    """
+    usage = ToolUsage.objects.select_related("tool", "user").filter(pk=usage_id).first()
+    if usage is None:
+        return {"status": "missing"}
+
+    html = (usage.output_meta or {}).get("html") or ""
+    if not html:
+        usage.status = UsageStatus.FAILED
+        usage.error = "no html on ToolUsage.output_meta"
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "no_html"}
+
+    t0 = time.time()
+    try:
+        result = render_flyer(html, page_format="Letter")
+    except FlyerPDFError as exc:
+        log.warning("render_flyer_pdf transient: %s", exc)
+        try:
+            countdown = 20 * (2**self.request.retries)
+            raise self.retry(exc=exc, countdown=countdown)
+        except self.MaxRetriesExceededError:
+            usage.status = UsageStatus.FAILED
+            usage.error = str(exc)[:500]
+            usage.save(update_fields=["status", "error", "updated_at"])
+            return {"status": "failed", "error": "max_retries"}
+    except Exception as exc:
+        log.exception("render_flyer_pdf unexpected error")
+        usage.status = UsageStatus.FAILED
+        usage.error = str(exc)[:500]
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "unhandled"}
+
+    output_path = f"flyers/{usage.user_id}/{usage.pk}.pdf"
+    try:
+        saved = default_storage.save(output_path, ContentFile(result.pdf_bytes))
+    except Exception as exc:
+        log.exception("render_flyer_pdf: storage save failed")
+        usage.status = UsageStatus.FAILED
+        usage.error = f"save_failed:{exc}"[:500]
+        usage.save(update_fields=["status", "error", "updated_at"])
+        return {"status": "failed", "error": "save_failed"}
+
+    try:
+        pdf_url = default_storage.url(saved)
+    except Exception:  # noqa: BLE001
+        pdf_url = None
+
+    usage.status = UsageStatus.SUCCESS
+    usage.duration_ms = (usage.duration_ms or 0) + int((time.time() - t0) * 1000)
+    usage.output_meta = {
+        **(usage.output_meta or {}),
+        "pdf_url": pdf_url,
+        "pdf_path": saved,
+        "pdf_bytes": result.byte_size,
+        "pdf_format": result.page_format,
+    }
+    usage.save()
+    return {
+        "status": "success",
+        "pdf_url": pdf_url,
+        "pdf_bytes": result.byte_size,
+        "runtime_ms": usage.duration_ms,
     }

@@ -13,6 +13,7 @@ Loaded by ``config/celery.py`` (CELERY_TASK_ROUTES setting).
 
 CELERY_TASK_ROUTES = {
     "apps.tools.tasks.run_furniture_remover": {"queue": "images"},
+    "apps.tools.tasks.render_flyer_pdf": {"queue": "images"},
     "apps.tools.tasks.generate_og_image": {"queue": "images"},
     "apps.content.tasks.resize_hero_image": {"queue": "images"},
     "apps.moderation.tasks.moderate_image_task": {"queue": "images"},
