@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Yakima Real Estate Hub — Central WA realtor + service marketplace + community."
 requires-python = ">=3.12"
 dependencies = [
-    "django>=5.1",
+    "django>=6.0",
     "django-environ>=0.11",
     "django-allauth>=65.0",
     "django-otp>=1.5",

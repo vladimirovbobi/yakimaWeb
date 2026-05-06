@@ -1,0 +1,204 @@
+# Dependabot — weekly PRs to keep deps current.
+# Scope: 5 ecosystems (Python, Node, Docker base images x3, GitHub Actions).
+# Schedule: weekly on Monday 06:00 America/Los_Angeles (Yakima Valley local).
+# Grouping: minor + patch updates batch into one PR per ecosystem; majors
+# get their own PR so they get review attention. Security updates always
+# get individual PRs regardless of grouping.
+# Labels: applied automatically so the inbox stays sortable.
+#
+# Reviewers: GitHub will assign whoever owns CODEOWNERS for the manifest.
+# Open-PR limit: 5 per ecosystem to avoid drowning the queue.
+
+version: 2
+updates:
+  # ─── Python (Django REST API + Celery + img-worker) ─────────────────────
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    labels:
+      - "deps"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      django-stack:
+        patterns:
+          - "django"
+          - "django-*"
+          - "djangorestframework*"
+          - "drf-*"
+        update-types:
+          - "minor"
+          - "patch"
+      celery-stack:
+        patterns:
+          - "celery*"
+          - "django-celery-*"
+          - "redis"
+        update-types:
+          - "minor"
+          - "patch"
+      observability:
+        patterns:
+          - "sentry-*"
+          - "structlog"
+        update-types:
+          - "minor"
+          - "patch"
+      ai-providers:
+        patterns:
+          - "google-genai"
+          - "anthropic"
+          - "openai"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-tools:
+        patterns:
+          - "pytest*"
+          - "ruff"
+          - "djlint"
+          - "factory-boy"
+          - "responses"
+          - "freezegun"
+          - "ipython"
+        update-types:
+          - "minor"
+          - "patch"
+        dependency-type: "development"
+
+  # ─── Node (Next.js frontend) ───────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    labels:
+      - "deps"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      next-react:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+          - "eslint-config-next"
+        update-types:
+          - "minor"
+          - "patch"
+      tiptap:
+        patterns:
+          - "@tiptap/*"
+        update-types:
+          - "minor"
+          - "patch"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+        update-types:
+          - "minor"
+          - "patch"
+      framer-motion:
+        patterns:
+          - "framer-motion"
+          - "lucide-react"
+        update-types:
+          - "minor"
+          - "patch"
+      tooling:
+        patterns:
+          - "tailwindcss"
+          - "postcss"
+          - "autoprefixer"
+          - "typescript"
+          - "@types/node"
+          - "eslint*"
+        update-types:
+          - "minor"
+          - "patch"
+        dependency-type: "development"
+      testing:
+        patterns:
+          - "@playwright/*"
+          - "vitest"
+          - "@testing-library/*"
+          - "happy-dom"
+          - "msw"
+        update-types:
+          - "minor"
+          - "patch"
+        dependency-type: "development"
+
+  # ─── Docker — root Dockerfile (api/celery/beat/img-worker) ─────────────
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "deps"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+
+  # ─── Docker — frontend (Next.js standalone) ────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "deps"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+
+  # ─── Docker — Caddy custom build with rate-limit module ───────────────
+  - package-ecosystem: "docker"
+    directory: "/caddy"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "deps"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+
+  # ─── GitHub Actions (CI workflows) ────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "deps"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
