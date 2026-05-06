@@ -60,7 +60,7 @@ export default function InvestigateDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60"
+      className="fixed inset-0 z-50 bg-dark-bg/60"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

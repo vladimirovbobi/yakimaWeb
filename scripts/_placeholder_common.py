@@ -14,16 +14,18 @@ from typing import Iterable, Sequence
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 
-# ── Brand palette (matches frontend/styles/tailwind.config.ts) ──────────────
-BLACK    = (8, 6, 4)
-DEEP     = (13, 9, 4)
-PANEL    = (20, 16, 8)
-WARM     = (26, 18, 8)
-GOLD     = (191, 160, 106)
-GOLD_HI  = (222, 201, 138)
-GOLD_DIM = (90, 74, 40)
-IVORY    = (245, 239, 224)
-MIST     = (206, 196, 168)
+# ── Brand palette (cream — vrov-new 1301 inversion).
+# Token names retained; values inverted so existing renderers paint dark
+# strokes on cream surfaces. See docs/research/cream-palette-from-vrov-1301.md.
+BLACK    = (245, 239, 224)  # page bg (was #080604)
+DEEP     = (237, 229, 205)  # secondary surface
+PANEL    = (229, 219, 188)  # cards
+WARM     = (216, 201, 164)  # accent surface
+GOLD     = (139, 115, 64)   # accent — darker for cream contrast
+GOLD_HI  = (184, 152, 96)   # hover
+GOLD_DIM = (90, 74, 40)     # unchanged — works on either bg
+IVORY    = (26, 18, 8)      # primary text (was #F5EFE0)
+MIST     = (90, 79, 66)     # secondary text
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,23 +63,23 @@ def base_canvas(w: int, h: int, *, seed: int = 0) -> Image.Image:
     overlay = overlay.filter(ImageFilter.GaussianBlur(radius=70))
     img.paste(overlay, (0, 0), overlay)
 
-    # Vignette
+    # Vignette — uses GOLD_DIM on cream so corners read as warm shade, not harsh black
     vignette = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     vd = ImageDraw.Draw(vignette)
     for i in range(8):
         a = int(8 * i)
         vd.rectangle((i * 4, i * 4, w - i * 4, h - i * 4),
-                     outline=(0, 0, 0, a), width=2)
+                     outline=(*GOLD_DIM, a), width=2)
     vignette = vignette.filter(ImageFilter.GaussianBlur(radius=60))
     img.paste(vignette, (0, 0), vignette)
 
-    # Subtle grain
+    # Subtle grain — toned to cream contrast (lower alpha than dark variant)
     grain = Image.new("L", (w, h))
     gp = grain.load()
     for y in range(h):
         for x in range(w):
-            gp[x, y] = rng.randint(0, 12)
-    g_rgba = Image.merge("RGBA", (grain, grain, grain, grain.point(lambda p: p // 2)))
+            gp[x, y] = rng.randint(0, 8)
+    g_rgba = Image.merge("RGBA", (grain, grain, grain, grain.point(lambda p: p // 4)))
     img.paste(g_rgba, (0, 0), g_rgba)
 
     return img
@@ -162,8 +164,9 @@ def watermark(img: Image.Image, label: str = "demo") -> None:
     y0 = h - margin - th - pad * 2
     x1 = w - margin
     y1 = h - margin
-    d.rectangle((x0, y0, x1, y1), fill=(*BLACK, 200), outline=(*GOLD_DIM, 220))
-    d.text((x0 + pad, y0 + pad - 2), text, font=f, fill=(*GOLD, 230))
+    # Dark pip on cream — IVORY is now the dark text token; pip reads strongly.
+    d.rectangle((x0, y0, x1, y1), fill=(*IVORY, 200), outline=(*GOLD_DIM, 220))
+    d.text((x0 + pad, y0 + pad - 2), text, font=f, fill=(*GOLD_HI, 240))
 
 
 def save_jpeg(img: Image.Image, path: Path, quality: int = 86) -> None:

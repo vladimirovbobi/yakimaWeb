@@ -26,15 +26,16 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "frontend" / "public" / "img" / "hero"
 
-BLACK = (8, 6, 4)
-DEEP = (13, 9, 4)
-PANEL = (20, 16, 8)
-WARM = (26, 18, 8)
-GOLD = (191, 160, 106)
-GOLD_HI = (222, 201, 138)
+# Cream palette (vrov-new 1301 inversion). See docs/research/cream-palette-from-vrov-1301.md.
+BLACK = (245, 239, 224)
+DEEP = (237, 229, 205)
+PANEL = (229, 219, 188)
+WARM = (216, 201, 164)
+GOLD = (139, 115, 64)
+GOLD_HI = (184, 152, 96)
 GOLD_DIM = (90, 74, 40)
-IVORY = (245, 239, 224)
-MIST = (206, 196, 168)
+IVORY = (26, 18, 8)
+MIST = (90, 79, 66)
 
 
 def _font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -121,7 +122,8 @@ def _label_pip(img: Image.Image, label: str) -> None:
         w - margin,
         h - margin,
     )
-    d.rectangle(rect, fill=(*BLACK, 200), outline=GOLD)
+    # Dark pip on cream — IVORY is now the dark text token.
+    d.rectangle(rect, fill=(*IVORY, 200), outline=GOLD)
     d.text((rect[0] + pad, rect[1] + pad - 2), text, font=f, fill=GOLD_HI)
 
 

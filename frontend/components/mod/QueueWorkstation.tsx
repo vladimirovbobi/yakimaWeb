@@ -423,7 +423,7 @@ export default function QueueWorkstation({
 
       {/* Escalation modal */}
       {escalateOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-6">
+        <div className="fixed inset-0 z-50 bg-dark-bg/70 flex items-end sm:items-center justify-center p-0 sm:p-6">
           <div className="bg-deep border border-gold/40 sm:max-w-lg w-full p-6 sm:p-8 sheet-mobile sm:!max-w-lg max-h-[90vh] overflow-y-auto safe-bottom sm:!pb-8">
             <div className="ey mb-3">Escalate to operators</div>
             <h3 className="font-serif font-light text-ivory text-xl mb-4">

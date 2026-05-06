@@ -126,7 +126,7 @@ export default function NotificationBell() {
       {open && (
         <>
           <div
-            className="sm:hidden fixed inset-0 z-40 bg-black/60"
+            className="sm:hidden fixed inset-0 z-40 bg-dark-bg/60"
             onClick={() => setOpen(false)}
             aria-hidden
           />

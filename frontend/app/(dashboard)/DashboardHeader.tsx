@@ -31,7 +31,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-black border-b border-gold/14 backdrop-blur supports-[backdrop-filter]:bg-black/85">
+    <header className="sticky top-0 z-40 bg-deep border-b border-gold/22 backdrop-blur supports-[backdrop-filter]:bg-deep/85">
       <div className="px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-3">
         <Link
           href="/"

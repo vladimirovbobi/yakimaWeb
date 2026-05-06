@@ -18,13 +18,15 @@ from PIL import Image, ImageDraw, ImageFont
 
 log = logging.getLogger(__name__)
 
-# Brand tokens (mirror tailwind config)
-BG_TOP    = (8, 6, 4)
-BG_BOTTOM = (13, 9, 4)
-GOLD      = (191, 160, 106)
-GOLD_HI   = (222, 201, 138)
-IVORY     = (245, 239, 224)
-MIST      = (206, 196, 168)
+# Brand tokens — cream palette (vrov-new 1301 inversion).
+# BG: cream → warm-cream gradient. Title: dark ink. Eyebrow: warm gold.
+BG_TOP    = (245, 239, 224)  # cream
+BG_BOTTOM = (216, 201, 164)  # warm-cream
+GOLD      = (139, 115, 64)
+GOLD_HI   = (184, 152, 96)
+IVORY     = (26, 18, 8)      # dark ink — now used for primary text
+MIST      = (90, 79, 66)     # secondary text
+DIM       = (74, 63, 42)     # muted footer
 
 WIDTH  = 1200
 HEIGHT = 630
@@ -122,11 +124,11 @@ def render(title: str, subtitle: str = "", variant: Variant = "default") -> io.B
     img = _gradient_bg()
     draw = ImageDraw.Draw(img)
 
-    # Brand mark (top-left)
+    # Brand mark (top-left) — dark ink for legibility on cream
     brand_font = _serif(36)
-    draw.text((PADDING, PADDING), "Yakima Web", font=brand_font, fill=GOLD)
+    draw.text((PADDING, PADDING), "Yakima Web", font=brand_font, fill=IVORY)
 
-    # Eyebrow (top-right)
+    # Eyebrow (top-right) — warm gold tracking-luxe
     eyebrow = EYEBROW_BY_VARIANT.get(variant, "INSIGHTS")
     eyebrow_font = _sans(20)
     eyebrow_bbox = draw.textbbox((0, 0), eyebrow, font=eyebrow_font)
@@ -135,19 +137,19 @@ def render(title: str, subtitle: str = "", variant: Variant = "default") -> io.B
     )
     _draw_tracked(
         draw, (WIDTH - PADDING - eyebrow_w, PADDING + 12), eyebrow,
-        eyebrow_font, MIST,
+        eyebrow_font, GOLD,
     )
 
-    # Title
+    # Title — dark ink serif on cream
     title_font = _serif(72)
     title_lines = _wrap(draw, title, title_font, WIDTH - 2 * PADDING, 3)
     title_y = 200
     for line in title_lines:
-        draw.text((PADDING, title_y), line, font=title_font, fill=GOLD_HI)
+        draw.text((PADDING, title_y), line, font=title_font, fill=IVORY)
         bbox = draw.textbbox((0, 0), line, font=title_font)
         title_y += (bbox[3] - bbox[1]) + 12
 
-    # Subtitle
+    # Subtitle — secondary warm-grey
     if subtitle:
         sub_font = _sans(28)
         sub_lines = _wrap(draw, subtitle, sub_font, WIDTH - 2 * PADDING, 2)
@@ -157,12 +159,12 @@ def render(title: str, subtitle: str = "", variant: Variant = "default") -> io.B
             bbox = draw.textbbox((0, 0), line, font=sub_font)
             sub_y += (bbox[3] - bbox[1]) + 8
 
-    # Footer
+    # Footer — small muted "yakimaweb.com"
     footer_font = _sans(22)
     draw.text(
         (PADDING, HEIGHT - PADDING - 28),
         "yakimaweb.com",
-        font=footer_font, fill=IVORY,
+        font=footer_font, fill=DIM,
     )
 
     rule_y = HEIGHT - PADDING - 48

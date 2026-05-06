@@ -2,13 +2,17 @@ import Link from "next/link";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "ghost" | "solid";
+type Variant = "primary" | "secondary" | "ghost" | "solid" | "dark";
 type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
   primary:
-    "border border-gold/52 text-gold hover:bg-gold hover:text-black hover:border-gold",
-  solid: "bg-gold text-black hover:bg-gold-hi shadow-card hover:shadow-gold-glow",
+    "border border-gold/52 text-gold hover:bg-gold hover:text-dark-text hover:border-gold",
+  // `solid` is now the dark-fill primary CTA on cream surfaces (1301 model).
+  solid:
+    "bg-dark-bg text-dark-text hover:bg-dark-deep shadow-card hover:shadow-gold-glow",
+  // Explicit alias for callers that want the dark-fill style by name.
+  dark: "bg-dark-bg text-dark-text hover:bg-dark-deep shadow-card",
   secondary:
     "border border-mist/20 text-mist hover:text-gold hover:border-gold/40",
   ghost: "text-mist hover:text-ivory",

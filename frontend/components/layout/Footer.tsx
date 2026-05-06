@@ -42,14 +42,14 @@ const columns = [
 
 export default function Footer() {
   return (
-    <footer className="bg-deep border-t border-gold/14 mt-auto">
+    <footer className="bg-dark-bg border-t border-dark-warm mt-auto">
       <Container as="div" className="py-16">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
           <div className="md:col-span-1 space-y-4">
-            <div className="font-serif tracking-luxe uppercase text-gold text-lg">
+            <div className="font-serif tracking-luxe uppercase text-gold-hi text-lg">
               Yakima Web
             </div>
-            <p className="text-mist text-sm leading-relaxed max-w-xs">
+            <p className="text-dark-mist text-sm leading-relaxed max-w-xs">
               Central Washington&rsquo;s home for realtors, services, and market
               truth.
             </p>
@@ -57,14 +57,14 @@ export default function Footer() {
 
           {columns.map((col) => (
             <div key={col.title} className="space-y-3">
-              <h3 className="ey">{col.title}</h3>
+              <h3 className="text-gold-hi uppercase tracking-eyebrow text-[10px] font-medium">{col.title}</h3>
               <ul className="space-y-1">
                 {col.links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
                       data-touch
-                      className="block py-2 text-mist hover:text-gold-hi text-sm transition-colors"
+                      className="block py-2 text-dark-mist hover:text-gold-hi text-sm transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -75,7 +75,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 pt-8 border-t border-gold/14 flex flex-col md:flex-row gap-4 justify-between text-xs text-dim safe-bottom-tight">
+        <div className="mt-14 pt-8 border-t border-dark-warm flex flex-col md:flex-row gap-4 justify-between text-xs text-dark-dim safe-bottom-tight">
           <span className="tracking-label uppercase">
             (c) {new Date().getFullYear()} Yakima Web
           </span>

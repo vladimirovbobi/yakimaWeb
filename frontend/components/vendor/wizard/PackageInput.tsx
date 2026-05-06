@@ -93,7 +93,7 @@ export default function PackageInput({ value, onChange }: Props) {
             {value.deliverables.map((d) => (
               <span
                 key={d}
-                className="inline-flex items-center gap-2 bg-black/40 border border-gold/22 text-ivory px-3 py-1 text-xs rounded-full"
+                className="inline-flex items-center gap-2 bg-warm/60 border border-gold/22 text-ivory px-3 py-1 text-xs rounded-full"
               >
                 {d}
                 <button

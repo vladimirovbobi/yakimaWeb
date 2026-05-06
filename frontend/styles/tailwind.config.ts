@@ -9,19 +9,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        black: "#080604",
-        deep: "#0D0904",
-        panel: "#141008",
-        warm: "#1A1208",
-        gold: "#BFA06A",
-        "gold-hi": "#DEC98A",
+        // Cream palette (Option C — vrov-new 1301 inversion)
+        black: "#F5EFE0",
+        deep: "#EDE5CD",
+        panel: "#E5DBBC",
+        warm: "#D8C9A4",
+        gold: "#8B7340",
+        "gold-hi": "#B89860",
         "gold-dim": "#5A4A28",
-        ivory: "#F5EFE0",
-        mist: "#CEC4A8",
-        dim: "#706450",
-        ok: "#65A05B",
-        warn: "#D4A446",
-        err: "#C66B5C",
+        ivory: "#1A1208",
+        mist: "#5A4F42",
+        dim: "#4A3F2A",
+        // Dark counterweights (footer, dark overlays, dark CTAs, scrolled nav)
+        "dark-bg": "#080604",
+        "dark-deep": "#0D0904",
+        "dark-panel": "#141008",
+        "dark-warm": "#1A1208",
+        "dark-text": "#F5EFE0",
+        "dark-mist": "#CEC4A8",
+        "dark-dim": "#706450",
+        // Status pips — adjusted for cream contrast
+        ok: "#3F8A4E",
+        warn: "#A87420",
+        err: "#B23A3A",
       },
       fontFamily: {
         serif: ['"Cormorant Garamond"', "Georgia", "serif"],

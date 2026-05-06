@@ -1,12 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" role="img" aria-label="Yakima Web mark">
   <title>Yakima Web mark</title>
-  <g fill="none" stroke="#BFA06A" stroke-linecap="round" stroke-linejoin="round">
+  <!-- [demo] cream-palette mark. Dark ink blades + warm-gold ring. -->
+  <g fill="none" stroke="#8B7340" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="30" cy="30" r="22" stroke-width="1.25"/>
     <circle cx="30" cy="30" r="14" stroke-width="0.75" opacity="0.55"/>
-    <path d="M30 8 L32 30 L30 52 L28 30 Z" fill="#BFA06A" stroke="none"/>
-    <path d="M8 30 L30 28 L52 30 L30 32 Z" fill="#BFA06A" stroke="none" opacity="0.85"/>
-    <path d="M14.4 14.4 L31 29 L45.6 45.6 L29 31 Z" fill="#BFA06A" stroke="none" opacity="0.55"/>
-    <path d="M45.6 14.4 L31 29 L14.4 45.6 L29 31 Z" fill="#BFA06A" stroke="none" opacity="0.55"/>
-    <circle cx="30" cy="30" r="1.6" fill="#DEC98A" stroke="none"/>
+    <path d="M30 8 L32 30 L30 52 L28 30 Z" fill="#1A1208" stroke="none"/>
+    <path d="M8 30 L30 28 L52 30 L30 32 Z" fill="#1A1208" stroke="none" opacity="0.85"/>
+    <path d="M14.4 14.4 L31 29 L45.6 45.6 L29 31 Z" fill="#8B7340" stroke="none" opacity="0.7"/>
+    <path d="M45.6 14.4 L31 29 L14.4 45.6 L29 31 Z" fill="#8B7340" stroke="none" opacity="0.7"/>
+    <circle cx="30" cy="30" r="1.6" fill="#1A1208" stroke="none"/>
   </g>
 </svg>

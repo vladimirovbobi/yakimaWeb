@@ -27,7 +27,7 @@ export default function Hero({
   return (
     <section
       className={cn(
-        "relative w-full min-h-[480px] sm:min-h-[560px] md:min-h-[640px] lg:min-h-[72vh] bg-black overflow-hidden",
+        "relative w-full min-h-[480px] sm:min-h-[560px] md:min-h-[640px] lg:min-h-[72vh] bg-deep overflow-hidden",
         className,
       )}
     >
@@ -38,12 +38,19 @@ export default function Hero({
         />
       )}
 
+      {/* Cream-side overlay: warm-tan fade so image is visible at top, copy
+          sits on a darker warm wash at the bottom (1301 model). */}
       <div
-        className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40"
+        className={cn(
+          "absolute inset-0",
+          bgImage
+            ? "bg-gradient-to-t from-warm via-warm/60 to-transparent"
+            : "bg-gradient-to-b from-deep via-black to-black",
+        )}
         aria-hidden
       />
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(191,160,106,0.08)_0%,_transparent_60%)]"
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(139,115,64,0.10)_0%,_transparent_60%)]"
         aria-hidden
       />
 
@@ -66,7 +73,7 @@ export default function Hero({
               <Link
                 href={primary.href}
                 data-touch
-                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 bg-gold text-black font-medium hover:bg-gold-hi transition-colors w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 bg-dark-bg text-dark-text font-medium hover:bg-dark-deep transition-colors w-full sm:w-auto"
               >
                 {primary.label}
               </Link>
@@ -75,7 +82,7 @@ export default function Hero({
               <Link
                 href={secondary.href}
                 data-touch
-                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 border border-gold/52 text-gold hover:bg-gold hover:text-black transition-colors w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 uppercase tracking-cap text-xs px-8 py-4 border border-gold/52 text-gold hover:bg-gold hover:text-dark-text transition-colors w-full sm:w-auto"
               >
                 {secondary.label}
               </Link>

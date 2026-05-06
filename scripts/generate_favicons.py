@@ -26,16 +26,20 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "frontend" / "public"
 
-BLACK = (8, 6, 4)
-GOLD = (191, 160, 106)
-GOLD_HI = (222, 201, 138)
+# Cream palette: cream-rounded surface, dark-ink mark, warm-gold ring accent.
+# Pairs with manifest theme_color #F5EFE0 so the iOS/Android home-screen splash
+# blends with the launched app shell.
+CREAM = (245, 239, 224)
+INK = (26, 18, 8)
+GOLD = (139, 115, 64)
+GOLD_HI = (184, 152, 96)
 
 
 def _rounded_square(size: int, radius_ratio: float = 0.18) -> Image.Image:
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     r = int(size * radius_ratio)
-    d.rounded_rectangle((0, 0, size - 1, size - 1), radius=r, fill=BLACK)
+    d.rounded_rectangle((0, 0, size - 1, size - 1), radius=r, fill=CREAM)
     return img
 
 
@@ -43,7 +47,7 @@ def _draw_mark(img: Image.Image) -> None:
     """Draw the compass-rose mark centered. Mark scales with image size."""
     size = img.size[0]
     cx = cy = size / 2.0
-    # outer ring
+    # outer ring — warm-gold accent
     ring_r = size * 0.36
     ring_w = max(1, int(size * 0.035))
     d = ImageDraw.Draw(img)
@@ -52,7 +56,7 @@ def _draw_mark(img: Image.Image) -> None:
         outline=GOLD,
         width=ring_w,
     )
-    # 4-point star (vertical + horizontal blades)
+    # 4-point star — dark ink for legibility on cream
     arm = size * 0.36
     blade = size * 0.045
     # vertical blade
@@ -63,7 +67,7 @@ def _draw_mark(img: Image.Image) -> None:
             (cx, cy + arm),
             (cx - blade, cy),
         ],
-        fill=GOLD_HI,
+        fill=INK,
     )
     # horizontal blade
     d.polygon(
@@ -73,9 +77,9 @@ def _draw_mark(img: Image.Image) -> None:
             (cx + arm, cy),
             (cx, cy + blade),
         ],
-        fill=GOLD,
+        fill=INK,
     )
-    # diagonal blades (subtler)
+    # diagonal blades — gold accent, subtler
     diag = size * 0.255
     diag_b = size * 0.03
     for dx, dy in ((1, 1), (1, -1)):
@@ -86,11 +90,11 @@ def _draw_mark(img: Image.Image) -> None:
                 (cx + diag * dx, cy + diag * dy),
                 (cx - diag_b * dy, cy - diag_b * dx),
             ],
-            fill=(*GOLD, 200),
+            fill=(*GOLD, 220),
         )
-    # center dot
+    # center dot — dark ink anchor
     dot = max(1, int(size * 0.025))
-    d.ellipse((cx - dot, cy - dot, cx + dot, cy + dot), fill=GOLD_HI)
+    d.ellipse((cx - dot, cy - dot, cx + dot, cy + dot), fill=INK)
 
 
 def _make(size: int) -> Image.Image:

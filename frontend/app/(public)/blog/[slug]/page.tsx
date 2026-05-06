@@ -116,7 +116,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-dark-bg via-dark-bg/60 to-dark-bg/30" />
       </div>
 
       <article className="section-y">

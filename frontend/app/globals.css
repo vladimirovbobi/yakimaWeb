@@ -7,29 +7,39 @@
 @layer base {
   :root {
     --radius: 6px;
-    --color-black: #080604;
-    --color-deep: #0d0904;
-    --color-panel: #141008;
-    --color-warm: #1a1208;
-    --color-gold: #bfa06a;
-    --color-gold-hi: #dec98a;
+    /* Cream palette (Option C — vrov-new 1301 inversion) */
+    --color-black: #f5efe0;
+    --color-deep: #ede5cd;
+    --color-panel: #e5dbbc;
+    --color-warm: #d8c9a4;
+    --color-gold: #8b7340;
+    --color-gold-hi: #b89860;
     --color-gold-dim: #5a4a28;
-    --color-ivory: #f5efe0;
-    --color-mist: #cec4a8;
-    --color-dim: #706450;
+    --color-ivory: #1a1208;
+    --color-mist: #5a4f42;
+    --color-dim: #4a3f2a;
+
+    /* Dark counterweights for footer / overlays / scrolled nav. */
+    --color-dark-bg: #080604;
+    --color-dark-deep: #0d0904;
+    --color-dark-panel: #141008;
+    --color-dark-warm: #1a1208;
+    --color-dark-text: #f5efe0;
+    --color-dark-mist: #cec4a8;
+    --color-dark-dim: #706450;
 
     /* Brand-prefixed aliases for non-Tailwind contexts (custom CSS, embedded
        iframes, third-party widgets). Mirror the --color-* tokens above. */
-    --yw-black: #080604;
-    --yw-deep: #0d0904;
-    --yw-panel: #141008;
-    --yw-warm: #1a1208;
-    --yw-gold: #bfa06a;
-    --yw-gold-hi: #dec98a;
+    --yw-black: #f5efe0;
+    --yw-deep: #ede5cd;
+    --yw-panel: #e5dbbc;
+    --yw-warm: #d8c9a4;
+    --yw-gold: #8b7340;
+    --yw-gold-hi: #b89860;
     --yw-gold-dim: #5a4a28;
-    --yw-ivory: #f5efe0;
-    --yw-mist: #cec4a8;
-    --yw-dim: #706450;
+    --yw-ivory: #1a1208;
+    --yw-mist: #5a4f42;
+    --yw-dim: #4a3f2a;
   }
 
   html {

@@ -160,7 +160,7 @@ function MobileBottomNav({ user }: { user: CurrentUser }) {
     <>
       <nav
         aria-label="Dashboard navigation"
-        className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-black/95 backdrop-blur-lg border-t border-gold/22 pb-[env(safe-area-inset-bottom)]"
+        className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-deep/95 backdrop-blur-lg border-t border-gold/22 pb-[env(safe-area-inset-bottom)]"
       >
         <ul className="grid grid-cols-5 max-w-md mx-auto">
           {primary.map((l) => {
@@ -200,7 +200,7 @@ function MobileBottomNav({ user }: { user: CurrentUser }) {
       {moreOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 z-50 bg-black/70"
+            className="lg:hidden fixed inset-0 z-50 bg-dark-bg/70"
             onClick={() => setMoreOpen(false)}
             aria-hidden
           />

@@ -75,7 +75,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                "pointer-events-auto px-5 py-3 border text-sm w-full sm:max-w-sm",
+                "pointer-events-auto px-5 py-3 border text-sm w-full sm:max-w-sm shadow-card",
                 tones[t.tone],
               )}
               role="status"

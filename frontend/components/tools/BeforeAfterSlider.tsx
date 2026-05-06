@@ -93,10 +93,10 @@ export default function BeforeAfterSlider({
       </div>
 
       {/* Labels */}
-      <span className="absolute left-3 top-3 ey text-ivory bg-black/60 px-2 py-1 text-[10px]">
+      <span className="absolute left-3 top-3 ey text-dark-text bg-dark-bg/60 px-2 py-1 text-[10px]">
         Before
       </span>
-      <span className="absolute right-3 top-3 ey text-ivory bg-black/60 px-2 py-1 text-[10px]">
+      <span className="absolute right-3 top-3 ey text-dark-text bg-dark-bg/60 px-2 py-1 text-[10px]">
         After
       </span>
 
@@ -108,7 +108,7 @@ export default function BeforeAfterSlider({
       <button
         type="button"
         aria-label="Adjust before/after split"
-        className="absolute top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/60 bg-black/85 text-gold cursor-ew-resize hover:bg-black focus:outline-none focus:ring-2 focus:ring-gold/70 touch-none"
+        className="absolute top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/60 bg-dark-bg/85 text-gold-hi cursor-ew-resize hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-gold/70 touch-none"
         style={{ left: `${position}%` }}
         onKeyDown={onKeyDown}
         onPointerDown={(e) => {

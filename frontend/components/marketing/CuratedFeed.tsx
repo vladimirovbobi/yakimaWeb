@@ -75,7 +75,7 @@ function FeaturedStory({ post }: { post: FeedPost }) {
                 fetchPriority="high"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-luxe group-hover:scale-[1.03]"
               />
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/10 to-transparent" aria-hidden />
+              <div className="absolute inset-0 bg-gradient-to-tr from-dark-bg/55 via-dark-bg/10 to-transparent" aria-hidden />
               <div className="absolute top-5 left-5 ey">Featured</div>
             </div>
             <CardBody className="md:p-10 flex flex-col justify-center">

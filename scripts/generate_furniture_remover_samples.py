@@ -27,16 +27,16 @@ OUT = ROOT / "frontend" / "public" / "img" / "samples" / "furniture-remover"
 
 W, H = 1200, 900
 
-# Brand tokens
-BLACK = (8, 6, 4)
-DEEP = (13, 9, 4)
-PANEL = (20, 16, 8)
-WARM = (26, 18, 8)
-GOLD = (191, 160, 106)
-GOLD_HI = (222, 201, 138)
+# Brand tokens — cream palette (vrov-new 1301 inversion).
+BLACK = (245, 239, 224)
+DEEP = (237, 229, 205)
+PANEL = (229, 219, 188)
+WARM = (216, 201, 164)
+GOLD = (139, 115, 64)
+GOLD_HI = (184, 152, 96)
 GOLD_DIM = (90, 74, 40)
-IVORY = (245, 239, 224)
-MIST = (206, 196, 168)
+IVORY = (26, 18, 8)
+MIST = (90, 79, 66)
 
 
 def _font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -136,7 +136,8 @@ def _watermark(img: Image.Image, label: str) -> None:
         W - margin,
         H - margin,
     )
-    d.rectangle(rect, fill=(*BLACK, 220), outline=GOLD)
+    # Dark pip on cream — IVORY is now the dark ink token.
+    d.rectangle(rect, fill=(*IVORY, 220), outline=GOLD)
     d.text(
         (rect[0] + pad, rect[1] + pad - 2),
         pip_text,

@@ -23,13 +23,13 @@ const sans = Raleway({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#080604",
+  themeColor: "#F5EFE0",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
   viewportFit: "cover",
-  colorScheme: "dark",
+  colorScheme: "light",
 };
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   publisher: "Yakima Real Estate Hub",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Yakima Web",
   },
   formatDetection: { telephone: false, address: false, email: false },
@@ -97,7 +97,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="dark"
+      data-theme="cream"
       className={`${serif.variable} ${sans.variable}`}
     >
       <head>
@@ -110,7 +110,7 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:bg-gold focus:text-black focus:text-xs focus:uppercase focus:tracking-luxe"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:bg-dark-bg focus:text-dark-text focus:text-xs focus:uppercase focus:tracking-luxe"
         >
           Skip to main content
         </a>
