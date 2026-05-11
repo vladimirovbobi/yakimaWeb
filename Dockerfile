@@ -2,7 +2,7 @@
 ARG PYTHON_VERSION=3.12-slim
 
 # ─── Stage 1: build static assets ────────────────────────────────────────
-FROM node:22-alpine AS frontend
+FROM node:26-alpine AS frontend
 WORKDIR /build
 COPY package.json package-lock.json* ./
 RUN npm install --no-audit --no-fund || true
